@@ -1,4 +1,3 @@
-
 name: Build Sparsh Saathi APK
 
 on:
@@ -34,7 +33,7 @@ jobs:
           
           cat << 'EOF' > capacitor.config.json
           {
-            "appId": "com.sparsh.saathi",
+            "appId": "com.manjit.sparshsaathi",
             "appName": "Sparsh Saathi",
             "webDir": "www",
             "server": {
@@ -46,6 +45,12 @@ jobs:
           
           npx cap add android
           npx cap sync android
+
+      - name: Configure Clean Signing & SDK
+        run: |
+          cd app-build/android/app
+          # सुनिश्चित करें कि v1 और v2 दोनों सिग्नेचर चालू रहें ताकि हर Android फोन इसे स्वीकार करे
+          sed -i '/signingConfigs {/a \        debug {\n            storeFile file("debug.keystore")\n            storePassword "android"\n            keyAlias "androiddebugkey"\n            keyPassword "android"\n            v1SigningEnabled true\n            v2SigningEnabled true\n        }' build.gradle || true
 
       - name: Build Debug APK
         run: |
