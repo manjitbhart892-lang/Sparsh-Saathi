@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-sans: 'Mukta', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    -webkit-tap-highlight-color: rgba(30, 58, 138, 0.2);
+  }
+
+  /* Accessible focus indicators for keyboard and screen reader navigation */
+  *:focus-visible {
+    outline: 3px solid #eab308 !important;
+    outline-offset: 3px !important;
+    box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.4) !important;
+  }
+}
+
+/* High Contrast Yellow-Black accessibility mode */
+.theme-high-contrast {
+  --bg-primary: #000000;
+  --bg-surface: #121212;
+  --bg-card: #1e1e1e;
+  --text-primary: #ffff00;
+  --text-secondary: #fef08a;
+  --accent: #ffd700;
+  --border: #ffff00;
+  background-color: #000000 !important;
+  color: #ffff00 !important;
+}
+
+.theme-high-contrast * {
+  border-color: #ffff00 !important;
+}
+
+.theme-high-contrast button {
+  background-color: #121212 !important;
+  color: #ffff00 !important;
+  border: 2px solid #ffff00 !important;
+}
+
+.theme-high-contrast button:hover,
+.theme-high-contrast button:focus {
+  background-color: #ffff00 !important;
+  color: #000000 !important;
+}
+
+/* Touch hitboxes for mobile ergonomics */
+.min-touch-target {
+  min-height: 48px;
+  min-width: 48px;
+}
