@@ -23,32 +23,38 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
+      - name: Setup Android Licenses
+        run: |
+          yes | sdkmanager --licenses || true
+
       - name: Initialize Web-to-APK Project
         run: |
-          mkdir app-build && cd app-build
+          mkdir -p app-build/www
+          cd app-build
+          echo '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Sparsh Saathi</title></head><body>Loading Sparsh Saathi...</body></html>' > www/index.html
           npm init -y
-          npm install @capacitor/core @capacitor/cli @capacitor/android
-          npx cap init "Sparsh Saathi" "com.sparsh.saathi" --web-dir ../
-          npx cap add android
+          npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
           
           cat << 'EOF' > capacitor.config.json
           {
             "appId": "com.sparsh.saathi",
             "appName": "Sparsh Saathi",
-            "webDir": "../",
+            "webDir": "www",
             "server": {
               "url": "https://sparsh-saathi.ai.studio",
               "cleartext": true
             }
           }
           EOF
+          
+          npx cap add android
           npx cap sync android
 
       - name: Build Debug APK
         run: |
           cd app-build/android
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
