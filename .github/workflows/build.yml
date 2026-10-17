@@ -23,27 +23,29 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
 
+      - name: Setup Python & Pillow
+        run: |
+          python3 -m pip install --upgrade pip pillow
+
       - name: Prepare Web and Capacitor Project
         run: |
-          # 1. Build directory setup
           mkdir -p app-build/www
           
-          # 2. Copy web files into www directory
+          # रिपॉजिटरी की वेब फ़ाइलें कॉपी करें
           find . -maxdepth 1 ! -name '.' ! -name '..' ! -name '.git' ! -name '.github' ! -name 'app-build' -exec cp -r {} app-build/www/ \;
           
-          # 3. Ensure index.html exists
           if [ ! -f app-build/www/index.html ]; then
-            echo '<!DOCTYPE html><html lang="hi"><head><meta charset="UTF-8"><title>स्पर्श साथी</title></head><body><h1>स्पर्श साथी</h1></body></html>' > app-build/www/index.html
+            echo '<!DOCTYPE html><html lang="hi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>स्पर्श साथी</title><style>body{margin:0;background:#0d0d0d;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;}img{width:160px;height:160px;border-radius:50%;box-shadow:0 0 25px #ff2a2a;margin-bottom:20px;}</style></head><body><img src="logo.png" onerror="this.src=\"logo.jpg\""><h1>स्पर्श साथी</h1></body></html>' > app-build/www/index.html
           fi
 
           cd app-build
           npm init -y
           npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
           
-          # 4. Capacitor Config
+          # नया पैकेज आईडी ताकि बिना किसी रुकावट के ऐप इंस्टॉल हो
           cat << 'EOF' > capacitor.config.json
           {
-            "appId": "com.sparshsaathi.app",
+            "appId": "com.sparshsaathi.official",
             "appName": "स्पर्श साथी",
             "webDir": "www",
             "server": {
@@ -52,18 +54,17 @@ jobs:
           }
           EOF
           
-          # 5. Add Android Platform & Sync
           npx cap add android
           npx cap sync android
 
-          # 6. Force App Name to "स्पर्श साथी" in strings.xml (Default & Hindi)
+          # ऐप का नाम हिंदी में "स्पर्श साथी" सेट करें
           cat << 'EOF' > android/app/src/main/res/values/strings.xml
           <?xml version='1.0' encoding='utf-8'?>
           <resources>
               <string name="app_name">स्पर्श साथी</string>
               <string name="title_activity_main">स्पर्श साथी</string>
-              <string name="package_name">com.sparshsaathi.app</string>
-              <string name="custom_url_scheme">com.sparshsaathi.app</string>
+              <string name="package_name">com.sparshsaathi.official</string>
+              <string name="custom_url_scheme">com.sparshsaathi.official</string>
           </resources>
           EOF
 
@@ -76,6 +77,56 @@ jobs:
           </resources>
           EOF
 
+      - name: Apply Custom App Logo
+        run: |
+          python3 - << 'EOF'
+          import os, glob, shutil
+          from PIL import Image
+
+          # रिपॉजिटरी में अपलोड किया गया लोगो ढूँढें
+          candidates = ['logo.png', 'logo.jpg', 'logo.jpeg', 'icon.png', 'icon.jpg', 'icon.jpeg']
+          target = None
+          for c in candidates:
+              if os.path.exists(c):
+                  target = c
+                  break
+
+          if not target:
+              # अगर नाम अलग हो तो कोई भी इमेज फ़ाइल पहचानें
+              all_imgs = [f for f in glob.glob("*.*") if f.lower().endswith(('.png', '.jpg', '.jpeg', '.webp'))]
+              if all_imgs:
+                  target = all_imgs[0]
+
+          if target:
+              print(f"==> App logo found: {target}")
+              img = Image.open(target).convert("RGBA")
+              
+              res_dir = "app-build/android/app/src/main/res"
+              sizes = {
+                  "mipmap-mdpi": 48,
+                  "mipmap-hdpi": 72,
+                  "mipmap-xhdpi": 96,
+                  "mipmap-xxhdpi": 144,
+                  "mipmap-xxxhdpi": 192
+              }
+              
+              for folder, size in sizes.items():
+                  folder_path = os.path.join(res_dir, folder)
+                  os.makedirs(folder_path, exist_ok=True)
+                  resized = img.resize((size, size), Image.Resampling.LANCZOS)
+                  resized.save(os.path.join(folder_path, "ic_launcher.png"), "PNG")
+                  resized.save(os.path.join(folder_path, "ic_launcher_round.png"), "PNG")
+                  resized.save(os.path.join(folder_path, "ic_launcher_foreground.png"), "PNG")
+              
+              # डिफ़ॉल्ट कैपेसिटर लोगो हटाने के लिए anydpi-v26 साफ़ करें
+              anydpi_path = os.path.join(res_dir, "mipmap-anydpi-v26")
+              if os.path.exists(anydpi_path):
+                  shutil.rmtree(anydpi_path)
+              print("==> Logo applied successfully to all screen sizes!")
+          else:
+              print("==> No logo image found. Default icon will be used.")
+          EOF
+
       - name: Build Debug APK
         run: |
           cd app-build/android
@@ -85,11 +136,11 @@ jobs:
       - name: Prepare APK for Artifact
         run: |
           mkdir -p release-apk
-          cp app-build/android/app/build/outputs/apk/debug/app-debug.apk release-apk/Sparsh-Saathi.apk
+          cp app-build/android/app/build/outputs/apk/debug/app-debug.apk release-apk/Sparsh-Saathi-v2.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Sparsh-Saathi-APK
-          path: release-apk/Sparsh-Saathi.apk
+          name: Sparsh-Saathi-v2-APK
+          path: release-apk/Sparsh-Saathi-v2.apk
           
