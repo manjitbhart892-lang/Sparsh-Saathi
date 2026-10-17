@@ -31,18 +31,17 @@ jobs:
         run: |
           mkdir -p app-build/www
           
-          # रिपॉजिटरी की वेब फ़ाइलें कॉपी करें
+          # वेब फ़ाइलें कॉपी करें
           find . -maxdepth 1 ! -name '.' ! -name '..' ! -name '.git' ! -name '.github' ! -name 'app-build' -exec cp -r {} app-build/www/ \;
           
           if [ ! -f app-build/www/index.html ]; then
-            echo '<!DOCTYPE html><html lang="hi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>स्पर्श साथी</title><style>body{margin:0;background:#0d0d0d;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;}img{width:160px;height:160px;border-radius:50%;box-shadow:0 0 25px #ff2a2a;margin-bottom:20px;}</style></head><body><img src="logo.png" onerror="this.src=\"logo.jpg\""><h1>स्पर्श साथी</h1></body></html>' > app-build/www/index.html
+            echo '<!DOCTYPE html><html lang="hi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>स्पर्श साथी</title><style>body{margin:0;background:#0d0d0d;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;}h1{color:#ff3333;text-shadow:0 0 10px #ff0000;}</style></head><body><h1>स्पर्श साथी</h1></body></html>' > app-build/www/index.html
           fi
 
           cd app-build
           npm init -y
           npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
           
-          # नया पैकेज आईडी ताकि बिना किसी रुकावट के ऐप इंस्टॉल हो
           cat << 'EOF' > capacitor.config.json
           {
             "appId": "com.sparshsaathi.official",
@@ -83,7 +82,6 @@ jobs:
           import os, glob, shutil
           from PIL import Image
 
-          # रिपॉजिटरी में अपलोड किया गया लोगो ढूँढें
           candidates = ['logo.png', 'logo.jpg', 'logo.jpeg', 'icon.png', 'icon.jpg', 'icon.jpeg']
           target = None
           for c in candidates:
@@ -92,15 +90,13 @@ jobs:
                   break
 
           if not target:
-              # अगर नाम अलग हो तो कोई भी इमेज फ़ाइल पहचानें
               all_imgs = [f for f in glob.glob("*.*") if f.lower().endswith(('.png', '.jpg', '.jpeg', '.webp'))]
               if all_imgs:
                   target = all_imgs[0]
 
           if target:
-              print(f"==> App logo found: {target}")
+              print(f"==> Applying app logo: {target}")
               img = Image.open(target).convert("RGBA")
-              
               res_dir = "app-build/android/app/src/main/res"
               sizes = {
                   "mipmap-mdpi": 48,
@@ -109,7 +105,6 @@ jobs:
                   "mipmap-xxhdpi": 144,
                   "mipmap-xxxhdpi": 192
               }
-              
               for folder, size in sizes.items():
                   folder_path = os.path.join(res_dir, folder)
                   os.makedirs(folder_path, exist_ok=True)
@@ -118,29 +113,60 @@ jobs:
                   resized.save(os.path.join(folder_path, "ic_launcher_round.png"), "PNG")
                   resized.save(os.path.join(folder_path, "ic_launcher_foreground.png"), "PNG")
               
-              # डिफ़ॉल्ट कैपेसिटर लोगो हटाने के लिए anydpi-v26 साफ़ करें
               anydpi_path = os.path.join(res_dir, "mipmap-anydpi-v26")
               if os.path.exists(anydpi_path):
                   shutil.rmtree(anydpi_path)
-              print("==> Logo applied successfully to all screen sizes!")
+              print("==> Logo applied successfully!")
           else:
-              print("==> No logo image found. Default icon will be used.")
+              print("==> No logo uploaded yet. Default icon used.")
           EOF
 
-      - name: Build Debug APK
+      - name: Configure Keystore and Build Signed Release APK
         run: |
           cd app-build/android
+          
+          # testOnly फ़्लैग हटाएँ ताकि फ़ोन इसे ब्लॉक न करे
+          echo "android.injected.testOnly=false" >> gradle.properties
+          
+          # डिजिटल सिग्नेचर कीस्टोर बनाएँ
+          keytool -genkey -v -keystore app/release-key.jks -keyalg RSA -keysize 2048 -validity 10000 -alias sparsh -storepass sparsh123 -keypass sparsh123 -dname "CN=SparshSaathi, OU=App, O=Sparsh, L=Delhi, S=Delhi, C=IN"
+          
+          # build.gradle में Release Signing कॉन्फ़िगर करें
+          python3 - << 'EOF'
+          import re
+          with open("app/build.gradle", "r") as f:
+              data = f.read()
+
+          signing = """
+              signingConfigs {
+                  release {
+                      storeFile file('release-key.jks')
+                      storePassword 'sparsh123'
+                      keyAlias 'sparsh'
+                      keyPassword 'sparsh123'
+                  }
+              }
+          """
+          if "signingConfigs {" not in data:
+              data = re.sub(r'(\n\s*buildTypes\s*\{)', signing + r'\1', data, count=1)
+          if "signingConfig signingConfigs.release" not in data:
+              data = re.sub(r'(buildTypes\s*\{\s*release\s*\{)', r'\1\n            signingConfig signingConfigs.release', data, count=1)
+
+          with open("app/build.gradle", "w") as f:
+              f.write(data)
+          EOF
+
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleRelease --no-daemon
 
       - name: Prepare APK for Artifact
         run: |
           mkdir -p release-apk
-          cp app-build/android/app/build/outputs/apk/debug/app-debug.apk release-apk/Sparsh-Saathi-v2.apk
+          cp app-build/android/app/build/outputs/apk/release/app-release.apk release-apk/Sparsh-Saathi-Final.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Sparsh-Saathi-v2-APK
-          path: release-apk/Sparsh-Saathi-v2.apk
+          name: Sparsh-Saathi-Final-APK
+          path: release-apk/Sparsh-Saathi-Final.apk
           
