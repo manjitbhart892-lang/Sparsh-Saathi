@@ -1,14 +1,13 @@
 name: Build Sparsh Saathi APK
 
 on:
-  push:
-    branches: [ "main" ]
   workflow_dispatch:
+  push:
+    branches: [ "main", "master" ]
 
 jobs:
   build-apk:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -24,41 +23,73 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
 
-      - name: Initialize Web-to-APK Project
+      - name: Prepare Web and Capacitor Project
         run: |
+          # 1. Build directory setup
           mkdir -p app-build/www
-          cp index.html app-build/www/index.html
-          cp index.css app-build/www/index.css
+          
+          # 2. Copy web files into www directory
+          find . -maxdepth 1 ! -name '.' ! -name '..' ! -name '.git' ! -name '.github' ! -name 'app-build' -exec cp -r {} app-build/www/ \;
+          
+          # 3. Ensure index.html exists
+          if [ ! -f app-build/www/index.html ]; then
+            echo '<!DOCTYPE html><html lang="hi"><head><meta charset="UTF-8"><title>स्पर्श साथी</title></head><body><h1>स्पर्श साथी</h1></body></html>' > app-build/www/index.html
+          fi
+
           cd app-build
           npm init -y
           npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
-
+          
+          # 4. Capacitor Config
           cat << 'EOF' > capacitor.config.json
           {
             "appId": "com.sparshsaathi.app",
             "appName": "स्पर्श साथी",
             "webDir": "www",
-            "bundledWebRuntime": false
+            "server": {
+              "cleartext": true
+            }
           }
           EOF
-
+          
+          # 5. Add Android Platform & Sync
           npx cap add android
           npx cap sync android
-          npx cap copy android
 
-          sed -i 's|<string name="app_name">.*</string>|<string name="app_name">स्पर्श साथी</string>|g' android/app/src/main/res/values/strings.xml
-          sed -i 's|<string name="title_activity_main">.*</string>|<string name="title_activity_main">स्पर्श साथी</string>|g' android/app/src/main/res/values/strings.xml
+          # 6. Force App Name to "स्पर्श साथी" in strings.xml (Default & Hindi)
+          cat << 'EOF' > android/app/src/main/res/values/strings.xml
+          <?xml version='1.0' encoding='utf-8'?>
+          <resources>
+              <string name="app_name">स्पर्श साथी</string>
+              <string name="title_activity_main">स्पर्श साथी</string>
+              <string name="package_name">com.sparshsaathi.app</string>
+              <string name="custom_url_scheme">com.sparshsaathi.app</string>
+          </resources>
+          EOF
+
+          mkdir -p android/app/src/main/res/values-hi
+          cat << 'EOF' > android/app/src/main/res/values-hi/strings.xml
+          <?xml version='1.0' encoding='utf-8'?>
+          <resources>
+              <string name="app_name">स्पर्श साथी</string>
+              <string name="title_activity_main">स्पर्श साथी</string>
+          </resources>
+          EOF
 
       - name: Build Debug APK
         run: |
           cd app-build/android
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
-          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/Sparsh-Saathi.apk
 
-      - name: Upload Working APK
+      - name: Prepare APK for Artifact
+        run: |
+          mkdir -p release-apk
+          cp app-build/android/app/build/outputs/apk/debug/app-debug.apk release-apk/Sparsh-Saathi.apk
+
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Sparsh-Saathi-App
-          path: app-build/android/app/build/outputs/apk/debug/Sparsh-Saathi.apk
+          name: Sparsh-Saathi-APK
+          path: release-apk/Sparsh-Saathi.apk
           
