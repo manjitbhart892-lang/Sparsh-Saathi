@@ -1,13 +1,14 @@
 name: Build Sparsh Saathi APK
 
 on:
-  workflow_dispatch:
   push:
     branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
   build-apk:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -26,41 +27,38 @@ jobs:
       - name: Initialize Web-to-APK Project
         run: |
           mkdir -p app-build/www
+          cp index.html app-build/www/index.html
+          cp index.css app-build/www/index.css
           cd app-build
-          echo '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Sparsh Saathi</title></head><body>Loading Sparsh Saathi...</body></html>' > www/index.html
           npm init -y
           npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
-          
+
           cat << 'EOF' > capacitor.config.json
           {
-            "appId": "com.manjit.sparshsaathi",
-            "appName": "Sparsh Saathi",
+            "appId": "com.sparshsaathi.app",
+            "appName": "स्पर्श साथी",
             "webDir": "www",
-            "server": {
-              "url": "https://sparsh-saathi.ai.studio",
-              "cleartext": true
-            }
+            "bundledWebRuntime": false
           }
           EOF
-          
+
           npx cap add android
           npx cap sync android
+          npx cap copy android
 
-      - name: Configure Clean Signing & SDK
-        run: |
-          cd app-build/android/app
-          # सुनिश्चित करें कि v1 और v2 दोनों सिग्नेचर चालू रहें ताकि हर Android फोन इसे स्वीकार करे
-          sed -i '/signingConfigs {/a \        debug {\n            storeFile file("debug.keystore")\n            storePassword "android"\n            keyAlias "androiddebugkey"\n            keyPassword "android"\n            v1SigningEnabled true\n            v2SigningEnabled true\n        }' build.gradle || true
+          sed -i 's|<string name="app_name">.*</string>|<string name="app_name">स्पर्श साथी</string>|g' android/app/src/main/res/values/strings.xml
+          sed -i 's|<string name="title_activity_main">.*</string>|<string name="title_activity_main">स्पर्श साथी</string>|g' android/app/src/main/res/values/strings.xml
 
       - name: Build Debug APK
         run: |
           cd app-build/android
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
+          cp app/build/outputs/apk/debug/app-debug.apk app/build/outputs/apk/debug/Sparsh-Saathi.apk
 
-      - name: Upload APK
+      - name: Upload Working APK
         uses: actions/upload-artifact@v4
         with:
-          name: Sparsh-Saathi-APK
-          path: app-build/android/app/build/outputs/apk/debug/app-debug.apk
+          name: Sparsh-Saathi-App
+          path: app-build/android/app/build/outputs/apk/debug/Sparsh-Saathi.apk
           
