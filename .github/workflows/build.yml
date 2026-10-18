@@ -145,7 +145,7 @@ jobs:
           function toggleCont(){document.body.classList.toggle('high-contrast');sp("कंट्रास्ट मोड बदला गया");}
           function playP1(){sp("इतनी शक्ति हमें देना दाता, मन का विश्वास कमजोर होना। हम चलें नेक रस्ते पे हमसे, भूलकर भी कोई भूल होना।");}
           function playP2(){sp("वह शक्ति हमें दो दयानिधे, कर्तव्य मार्ग पर डट जावें। पर सेवा पर उपकार में हम, निज जीवन सफल बना जावें।");}
-          function playAnthem(){sp("जन गण मन अधिनायक जय हे, भारत भाग्य विधाता। पंजाब सिन्धु गुजरात मराठा, द्राविड़ उत्कल बंग। विन्ध्य हिमाचल यमुना गंगा, उच्छल जलधि तरंग। जय हे, जय हे, जय हे, जय जय जय जय हे!");}
+          function playAnthem(){sp("जन गण मन अधिनायक जय हे, भारत भाग्य विधाता। जय हे, जय हे, जय हे, जय जय जय जय हे!");}
           function playSong(){sp("वन्दे मातरम्! सुजलाम् सुफलाम् मलयजशीतलाम् शस्यश्यामलाम् मातरम्!");}
           let cVal='0';
           function cIn(c){if(c==='C'){cVal='0';sp("क्लियर");}else{cVal=(cVal==='0'&&c!=='.')?c:cVal+c;sp(c);}document.getElementById('cDisp').innerText=cVal;}
@@ -162,7 +162,7 @@ jobs:
           npm init -y
           npm i @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
           cat << 'EOF' > capacitor.config.json
-          {"appId":"com.sparshsaathi.gorakhpur","appName":"स्पर्श साथी","webDir":"www","server":{"cleartext":true}}
+          {"appId":"com.sparshsaathi.official","appName":"स्पर्श साथी","webDir":"www","server":{"cleartext":true}}
           EOF
           npx cap add android
 
