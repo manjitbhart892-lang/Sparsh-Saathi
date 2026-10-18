@@ -3,10 +3,7 @@ name: Build Sparsh Saathi APK
 on:
   workflow_dispatch:
   push:
-    branches: [ "main", "master" ]
-
-permissions:
-  contents: write
+    branches: [ "main" ]
 
 jobs:
   build-apk:
@@ -15,7 +12,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -26,28 +23,26 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
 
-      - name: Setup Python & Pillow
+      - name: Setup Python, Pillow & Hindi Font
         run: |
-          python3 -m pip install --upgrade pip pillow
+          pip install pillow --break-system-packages
+          curl -fsSL "https://github.com/googlefonts/noto-fonts/raw/main/hinted/ttf/NotoSansDevanagari/NotoSansDevanagari-Bold.ttf" -o /tmp/hindi_font.ttf
 
-      - name: Prepare Web and Capacitor Project
+      - name: Create Web Project & Auto-Generate 4-Color 'स' Logo
         run: |
           mkdir -p app-build/www
           
-          # मुख्य फ़ोल्डर की वेब फ़ाइलें कॉपी करें
-          find . -maxdepth 1 ! -name '.' ! -name '..' ! -name '.git' ! -name '.github' ! -name 'app-build' -exec cp -r {} app-build/www/ \;
+          # सभी वेब फाइलों को www फोल्डर में कॉपी करना
+          rsync -av --exclude='app-build' --exclude='.github' --exclude='.git' ./ app-build/www/
           
-          if [ ! -f app-build/www/index.html ]; then
-            echo '<!DOCTYPE html><html lang="hi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>स्पर्श साथी</title><style>body{margin:0;background:#0d0d0d;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;}h1{color:#ff3333;text-shadow:0 0 10px #ff0000;}</style></head><body><h1>स्पर्श साथी</h1></body></html>' > app-build/www/index.html
-          fi
-
           cd app-build
           npm init -y
           npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
           
+          # Capacitor कॉन्फ़िगरेशन
           cat << 'EOF' > capacitor.config.json
           {
-            "appId": "com.sparshsaathi.official",
+            "appId": "com.sparsh.saathi",
             "appName": "स्पर्श साथी",
             "webDir": "www",
             "server": {
@@ -57,126 +52,72 @@ jobs:
           EOF
           
           npx cap add android
+
+          # गूगल के 4 रंगों वाला 'स' ऐप आइकन तैयार करना
+          python3 - << 'EOF'
+          from PIL import Image, ImageDraw, ImageFont
+          import os
+
+          sizes = {
+              'mipmap-mdpi': 48,
+              'mipmap-hdpi': 72,
+              'mipmap-xhdpi': 96,
+              'mipmap-xxhdpi': 144,
+              'mipmap-xxxhdpi': 192
+          }
+
+          font_path = "/tmp/hindi_font.ttf"
+
+          for folder, sz in sizes.items():
+              img = Image.new('RGBA', (sz, sz), (255, 255, 255, 255))
+              draw = ImageDraw.Draw(img)
+              
+              # गूगल के 4 रंग (बॉर्डर रिंग)
+              b = max(2, sz // 14)
+              draw.arc([b, b, sz - b, sz - b], start=180, end=270, fill=(66, 133, 244), width=b)  # Blue
+              draw.arc([b, b, sz - b, sz - b], start=270, end=360, fill=(234, 67, 53), width=b)   # Red
+              draw.arc([b, b, sz - b, sz - b], start=0, end=90, fill=(251, 188, 5), width=b)     # Yellow
+              draw.arc([b, b, sz - b, sz - b], start=90, end=180, fill=(52, 168, 83), width=b)    # Green
+              
+              # देवनागरी 'स'
+              try:
+                  font = ImageFont.truetype(font_path, int(sz * 0.52))
+              except:
+                  font = ImageFont.load_default()
+              
+              text = "स"
+              bbox = draw.textbbox((0, 0), text, font=font)
+              w = bbox[2] - bbox[0]
+              h = bbox[3] - bbox[1]
+              x = (sz - w) / 2 - bbox[0]
+              y = (sz - h) / 2 - bbox[1]
+              draw.text((x, y), text, fill=(32, 33, 36), font=font)
+              
+              out_dir = f"android/app/src/main/res/{folder}"
+              os.makedirs(out_dir, exist_ok=True)
+              img.save(f"{out_dir}/ic_launcher.png")
+              img.save(f"{out_dir}/ic_launcher_round.png")
+              img.save(f"{out_dir}/ic_launcher_foreground.png")
+          print("लोगो सफलतापूर्वक तैयार हो गया!")
+          EOF
+
+          # पुराने डिफॉल्ट लोगो को हटाना ताकि नया 'स' लोगो ही दिखे
+          rm -rf android/app/src/main/res/mipmap-anydpi-v26
+
+          # परमिशन जोड़ना
+          sed -i '/<application/i <uses-permission android:name="android.permission.VIBRATE" />\n<uses-permission android:name="android.permission.INTERNET" />' android/app/src/main/AndroidManifest.xml
+          
           npx cap sync android
 
-          # ऐप का नाम हिंदी में "स्पर्श साथी" सेट करें
-          cat << 'EOF' > android/app/src/main/res/values/strings.xml
-          <?xml version='1.0' encoding='utf-8'?>
-          <resources>
-              <string name="app_name">स्पर्श साथी</string>
-              <string name="title_activity_main">स्पर्श साथी</string>
-              <string name="package_name">com.sparshsaathi.official</string>
-              <string name="custom_url_scheme">com.sparshsaathi.official</string>
-          </resources>
-          EOF
-
-          mkdir -p android/app/src/main/res/values-hi
-          cat << 'EOF' > android/app/src/main/res/values-hi/strings.xml
-          <?xml version='1.0' encoding='utf-8'?>
-          <resources>
-              <string name="app_name">स्पर्श साथी</string>
-              <string name="title_activity_main">स्पर्श साथी</string>
-          </resources>
-          EOF
-
-      - name: Apply Custom App Logo
-        run: |
-          python3 - << 'EOF'
-          import os, glob, shutil
-          from PIL import Image
-
-          candidates = ['logo.png', 'logo.jpg', 'logo.jpeg', 'icon.png', 'icon.jpg', 'icon.jpeg']
-          target = None
-          for c in candidates:
-              if os.path.exists(c):
-                  target = c
-                  break
-
-          if not target:
-              all_imgs = [f for f in glob.glob("*.*") if f.lower().endswith(('.png', '.jpg', '.jpeg', '.webp'))]
-              if all_imgs:
-                  target = all_imgs[0]
-
-          if target:
-              print(f"==> Applying app logo: {target}")
-              img = Image.open(target).convert("RGBA")
-              res_dir = "app-build/android/app/src/main/res"
-              sizes = {
-                  "mipmap-mdpi": 48,
-                  "mipmap-hdpi": 72,
-                  "mipmap-xhdpi": 96,
-                  "mipmap-xxhdpi": 144,
-                  "mipmap-xxxhdpi": 192
-              }
-              for folder, size in sizes.items():
-                  folder_path = os.path.join(res_dir, folder)
-                  os.makedirs(folder_path, exist_ok=True)
-                  resized = img.resize((size, size), Image.Resampling.LANCZOS)
-                  resized.save(os.path.join(folder_path, "ic_launcher.png"), "PNG")
-                  resized.save(os.path.join(folder_path, "ic_launcher_round.png"), "PNG")
-                  resized.save(os.path.join(folder_path, "ic_launcher_foreground.png"), "PNG")
-              
-              anydpi_path = os.path.join(res_dir, "mipmap-anydpi-v26")
-              if os.path.exists(anydpi_path):
-                  shutil.rmtree(anydpi_path)
-              print("==> Logo applied successfully!")
-          else:
-              print("==> No logo uploaded yet. Default icon used.")
-          EOF
-
-      - name: Configure Keystore and Build Signed Release APK
+      - name: Build Debug APK
         run: |
           cd app-build/android
-          echo "android.injected.testOnly=false" >> gradle.properties
-          
-          # डिजिटल सिग्नेचर कीस्टोर
-          keytool -genkey -v -keystore app/release-key.jks -keyalg RSA -keysize 2048 -validity 10000 -alias sparsh -storepass sparsh123 -keypass sparsh123 -dname "CN=SparshSaathi, OU=App, O=Sparsh, L=Delhi, S=Delhi, C=IN"
-          
-          python3 - << 'EOF'
-          import re
-          with open("app/build.gradle", "r") as f:
-              data = f.read()
-
-          signing = """
-              signingConfigs {
-                  release {
-                      storeFile file('release-key.jks')
-                      storePassword 'sparsh123'
-                      keyAlias 'sparsh'
-                      keyPassword 'sparsh123'
-                  }
-              }
-          """
-          if "signingConfigs {" not in data:
-              data = re.sub(r'(\n\s*buildTypes\s*\{)', signing + r'\1', data, count=1)
-          if "signingConfig signingConfigs.release" not in data:
-              data = re.sub(r'(buildTypes\s*\{\s*release\s*\{)', r'\1\n            signingConfig signingConfigs.release', data, count=1)
-
-          with open("app/build.gradle", "w") as f:
-              f.write(data)
-          EOF
-
           chmod +x gradlew
-          ./gradlew assembleRelease --no-daemon
+          ./gradlew assembleDebug --no-daemon
 
-      - name: Prepare APK File
-        run: |
-          mkdir -p release-apk
-          cp app-build/android/app/build/outputs/apk/release/app-release.apk release-apk/Sparsh-Saathi.apk
-
-      - name: Upload APK to Artifacts
+      - name: Upload Sparsh Saathi APK
         uses: actions/upload-artifact@v4
         with:
-          name: Sparsh-Saathi-APK
-          path: release-apk/Sparsh-Saathi.apk
-
-      - name: Publish Direct APK to GitHub Releases
-        uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/heads/')
-        with:
-          tag_name: build-${{ github.run_number }}
-          name: स्पर्श साथी APK (Build ${{ github.run_number }})
-          files: release-apk/Sparsh-Saathi.apk
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: Sparsh-Saathi-Finished-APK
+          path: app-build/android/app/build/outputs/apk/debug/app-debug.apk
           
