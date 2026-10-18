@@ -1,21 +1,445 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="hi">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
-    <title>स्पर्श साथी | Sparsh Saathi - स्पर्श राजकीय दृष्टिबाधित इंटर कॉलेज, गोरखपुर</title>
-    <meta name="description" content="स्पर्श राजकीय दृष्टिबाधित इंटर कॉलेज, लालडिग्गी, गोरखपुर के छात्र-छात्राओं और शिक्षकों के लिए पूर्णतः सुगम (Accessible) शैक्षिक व दैनिक सहयोगी ऐप।" />
-    <meta property="og:title" content="स्पर्श साथी | Sparsh Saathi - गोरखपुर" />
-    <meta property="og:description" content="सुगम टॉकिंग कैलकुलेटर, विद्यालय प्रार्थना, नोटिस बोर्ड, आयु गणक, RPwD अधिकार व संविधान ज्ञान।" />
-    <meta property="og:type" content="website" />
-    <meta name="theme-color" content="#1e3a8a" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  </head>
-  <body class="bg-slate-50 text-slate-900 antialiased selection:bg-amber-300 selection:text-slate-900 min-h-screen">
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>स्पर्श साथी</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    :root {
+      --bg: #f8f9fa;
+      --card-bg: #ffffff;
+      --text: #202124;
+      --primary: #1a73e8;
+      --red: #ea4335;
+      --yellow: #fbbc05;
+      --green: #34a853;
+      --border: #dadce0;
+    }
+    body.high-contrast {
+      --bg: #000000;
+      --card-bg: #1a1a1a;
+      --text: #ffffff;
+      --primary: #8ab4f8;
+      --border: #ffff00;
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 16px;
+      padding-bottom: 60px;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+      padding: 14px;
+      background: var(--card-bg);
+      border-radius: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    }
+    .logo-container {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 60px;
+      height: 60px;
+      border-radius: 18px;
+      background: #ffffff;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+      font-size: 34px;
+      font-weight: 900;
+      margin-bottom: 8px;
+      border-top: 5px solid var(--primary);
+      border-right: 5px solid var(--red);
+      border-bottom: 5px solid var(--yellow);
+      border-left: 5px solid var(--green);
+    }
+    h1 {
+      font-size: 26px;
+      font-weight: 800;
+    }
+    .status-badge {
+      display: inline-block;
+      margin-top: 6px;
+      background: #e6f4ea;
+      color: var(--green);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: bold;
+    }
+    body.high-contrast .status-badge {
+      background: #003300;
+      color: #76ff03;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .card {
+      background: var(--card-bg);
+      padding: 18px 12px;
+      border-radius: 18px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      text-align: center;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: transform 0.1s;
+    }
+    .card:active {
+      transform: scale(0.96);
+      border-color: var(--primary);
+    }
+    .card-full {
+      grid-column: span 2;
+    }
+    .card-icon {
+      font-size: 36px;
+      margin-bottom: 6px;
+    }
+    .card-title {
+      font-size: 16px;
+      font-weight: bold;
+    }
+    .card-sub {
+      font-size: 12px;
+      color: #5f6368;
+      margin-top: 4px;
+    }
+    body.high-contrast .card-sub {
+      color: #bbbbbb;
+    }
+    .sos-card {
+      background: var(--red) !important;
+      color: #ffffff !important;
+    }
+    .sos-card .card-sub {
+      color: #ffebee !important;
+    }
+    .box {
+      background: var(--card-bg);
+      padding: 18px;
+      border-radius: 18px;
+      margin-bottom: 18px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .box-title {
+      font-size: 17px;
+      font-weight: bold;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    input {
+      width: 100%;
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      font-size: 16px;
+      margin-bottom: 10px;
+      background: transparent;
+      color: var(--text);
+    }
+    button.btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 12px;
+      border: none;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      color: white;
+    }
+    .btn-blue { background: var(--primary); }
+    .btn-green { background: var(--green); }
+    .list {
+      list-style: none;
+      margin-top: 12px;
+    }
+    .list-item {
+      padding: 12px;
+      background: rgba(0,0,0,0.03);
+      border-radius: 10px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 15px;
+    }
+    body.high-contrast .list-item {
+      background: #252525;
+      border: 1px solid #444;
+    }
+    .btn-del {
+      background: var(--red);
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+    }
+    #torchScreen {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: #ffffff;
+      z-index: 999999;
+      color: #000000;
+      text-align: center;
+      padding-top: 60%;
+      font-size: 24px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
 
+  <header>
+    <div class="logo-container">स</div>
+    <h1>स्पर्श साथी</h1>
+    <div class="status-badge">⚡ 100% ऑफ़लाइन सक्रिय</div>
+  </header>
+
+  <div class="grid">
+    <!-- बोलती घड़ी -->
+    <div class="card card-full" onclick="speakTime()">
+      <div class="card-icon">⏰</div>
+      <div class="card-title">समय और तारीख सुनें</div>
+      <div class="card-sub" id="clockDisplay">टैप करें और सुनें</div>
+    </div>
+
+    <!-- इमरजेंसी SOS अलार्म -->
+    <div class="card sos-card" onclick="toggleSOS()">
+      <div class="card-icon">🚨</div>
+      <div class="card-title" id="sosTitle">इमरजेंसी SOS अलार्म</div>
+      <div class="card-sub">तेज़ सायरन व कंपन</div>
+    </div>
+
+    <!-- स्क्रीन टॉर्च -->
+    <div class="card" onclick="openTorch()">
+      <div class="card-icon">🔦</div>
+      <div class="card-title">स्क्रीन टॉर्च</div>
+      <div class="card-sub">फुल सफ़ेद रोशनी</div>
+    </div>
+
+    <!-- बैटरी स्थिति -->
+    <div class="card" onclick="speakBattery()">
+      <div class="card-icon">🔋</div>
+      <div class="card-title">बैटरी स्थिति</div>
+      <div class="card-sub" id="batteryStatus">जांचने के लिए दबाएं</div>
+    </div>
+
+    <!-- कंपन / स्पर्श टेस्ट -->
+    <div class="card" onclick="testVibration()">
+      <div class="card-icon">📳</div>
+      <div class="card-title">स्पर्श कंपन</div>
+      <div class="card-sub">वाइब्रेशन टेस्ट करें</div>
+    </div>
+
+    <!-- हाई कंट्रास्ट / नाइट मोड -->
+    <div class="card card-full" onclick="toggleContrast()">
+      <div class="card-icon">👁️</div>
+      <div class="card-title">कंट्रास्ट बदलें (सुगम दृश्य)</div>
+      <div class="card-sub">अक्षरों को स्पष्ट और बड़ा देखें</div>
+    </div>
+  </div>
+
+  <!-- ऑफलाइन नोट्स -->
+  <div class="box">
+    <div class="box-title">📝 अपनी जरूरी बातें (ऑफ़लाइन डायरी)</div>
+    <input type="text" id="noteInput" placeholder="यहाँ कोई भी बात या हिसाब लिखें...">
+    <button class="btn btn-blue" onclick="addNote()">सुरक्षित करें</button>
+    <ul class="list" id="notesList"></ul>
+  </div>
+
+  <!-- इमरजेंसी संपर्क -->
+  <div class="box">
+    <div class="box-title">📞 जरूरी नंबर (एक टच में कॉल)</div>
+    <input type="text" id="contactName" placeholder="नाम (जैसे: घर / डॉक्टर)">
+    <input type="tel" id="contactNumber" placeholder="फ़ोन नंबर">
+    <button class="btn btn-green" onclick="addContact()">नंबर जोड़ें</button>
+    <ul class="list" id="contactsList"></ul>
+  </div>
+
+  <!-- टॉर्च स्क्रीन -->
+  <div id="torchScreen" onclick="closeTorch()">
+    🔦 रोशनी चालू है!<br>
+    <span style="font-size: 15px; font-weight: normal; margin-top: 10px; display: inline-block;">
+      बंद करने के लिए कहीं भी टच करें
+    </span>
+  </div>
+
+  <script>
+    function speak(text) {
+      if ('vibrate' in navigator) navigator.vibrate(40);
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'hi-IN';
+        u.rate = 0.9;
+        window.speechSynthesis.speak(u);
+      }
+    }
+
+    function speakTime() {
+      const now = new Date();
+      const time = now.toLocaleTimeString('hi-IN', { hour: '2-digit', minute: '2-digit' });
+      const date = now.toLocaleDateString('hi-IN', { weekday: 'long', day: 'numeric', month: 'long' });
+      const txt = "समय है " + time + ", और आज " + date + " है।";
+      document.getElementById('clockDisplay').innerText = time + " • " + date;
+      speak(txt);
+    }
+
+    function speakBattery() {
+      if ('getBattery' in navigator) {
+        navigator.getBattery().then(b => {
+          const pct = Math.round(b.level * 100);
+          const chg = b.charging ? "फोन चार्ज हो रहा है" : "फोन चार्जर पर नहीं है";
+          const msg = "फोन की बैटरी " + pct + " प्रतिशत है, और " + chg;
+          document.getElementById('batteryStatus').innerText = pct + "% (" + (b.charging ? "चार्जिंग" : "डिस्चार्जिंग") + ")";
+          speak(msg);
+        });
+      } else {
+        speak("बैटरी की जानकारी उपलब्ध नहीं हो सकी");
+      }
+    }
+
+    function openTorch() {
+      document.getElementById('torchScreen').style.display = 'block';
+      if ('vibrate' in navigator) navigator.vibrate(60);
+    }
+    function closeTorch() {
+      document.getElementById('torchScreen').style.display = 'none';
+    }
+
+    function testVibration() {
+      if ('vibrate' in navigator) {
+        navigator.vibrate([100, 60, 150, 60, 250]);
+        speak("स्पर्श कंपन सक्रिय है");
+      } else {
+        speak("डिवाइस में कंपन सपोर्ट नहीं है");
+      }
+    }
+
+    let audioCtx = null;
+    let osc = null;
+    let sirenOn = false;
+    let sirenTimer = null;
+
+    function toggleSOS() {
+      if (!sirenOn) {
+        sirenOn = true;
+        document.getElementById('sosTitle').innerText = "सायरन बंद करें";
+        if ('vibrate' in navigator) navigator.vibrate([500, 200, 500, 200, 500]);
+        try {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sawtooth';
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start();
+          let flag = false;
+          sirenTimer = setInterval(() => {
+            osc.frequency.setValueAtTime(flag ? 950 : 550, audioCtx.currentTime);
+            flag = !flag;
+          }, 300);
+        } catch(e) {
+          speak("इमरजेंसी अलार्म शुरू हो गया है!");
+        }
+      } else {
+        sirenOn = false;
+        document.getElementById('sosTitle').innerText = "इमरजेंसी SOS अलार्म";
+        if (sirenTimer) clearInterval(sirenTimer);
+        if (osc) { osc.stop(); osc.disconnect(); }
+        if (audioCtx) audioCtx.close();
+        speak("अलार्म बंद कर दिया गया");
+      }
+    }
+
+    function toggleContrast() {
+      document.body.classList.toggle('high-contrast');
+      const isDark = document.body.classList.contains('high-contrast');
+      speak(isDark ? "हाई कंट्रास्ट मोड चालू किया गया" : "सामान्य मोड चालू किया गया");
+    }
+
+    function renderNotes() {
+      const list = document.getElementById('notesList');
+      list.innerHTML = '';
+      const notes = JSON.parse(localStorage.getItem('ss_notes') || '[]');
+      notes.forEach((n, i) => {
+        const li = document.createElement('li');
+        li.className = 'list-item';
+        li.innerHTML = '<span onclick="speak(\'' + n.replace(/'/g, "") + '\')">' + n + '</span>' +
+                       '<button class="btn-del" onclick="deleteNote(' + i + ')">हटाएं</button>';
+        list.appendChild(li);
+      });
+    }
+    function addNote() {
+      const val = document.getElementById('noteInput').value.trim();
+      if (!val) return;
+      const notes = JSON.parse(localStorage.getItem('ss_notes') || '[]');
+      notes.unshift(val);
+      localStorage.setItem('ss_notes', JSON.stringify(notes));
+      document.getElementById('noteInput').value = '';
+      renderNotes();
+      speak("नोट सुरक्षित किया गया");
+    }
+    function deleteNote(i) {
+      const notes = JSON.parse(localStorage.getItem('ss_notes') || '[]');
+      notes.splice(i, 1);
+      localStorage.setItem('ss_notes', JSON.stringify(notes));
+      renderNotes();
+      speak("नोट हटा दिया गया");
+    }
+
+    function renderContacts() {
+      const list = document.getElementById('contactsList');
+      list.innerHTML = '';
+      const contacts = JSON.parse(localStorage.getItem('ss_contacts') || '[]');
+      contacts.forEach((c, i) => {
+        const li = document.createElement('li');
+        li.className = 'list-item';
+        li.innerHTML = '<a href="tel:' + c.number + '" style="text-decoration:none; color:inherit; font-weight:bold;">📞 ' + c.name + ' (' + c.number + ')</a>' +
+                       '<button class="btn-del" onclick="deleteContact(' + i + ')">हटाएं</button>';
+        list.appendChild(li);
+      });
+    }
+    function addContact() {
+      const name = document.getElementById('contactName').value.trim();
+      const number = document.getElementById('contactNumber').value.trim();
+      if (!name || !number) return;
+      const contacts = JSON.parse(localStorage.getItem('ss_contacts') || '[]');
+      contacts.push({ name, number });
+      localStorage.setItem('ss_contacts', JSON.stringify(contacts));
+      document.getElementById('contactName').value = '';
+      document.getElementById('contactNumber').value = '';
+      renderContacts();
+      speak("नंबर जोड़ दिया गया");
+    }
+    function deleteContact(i) {
+      const contacts = JSON.parse(localStorage.getItem('ss_contacts') || '[]');
+      contacts.splice(i, 1);
+      localStorage.setItem('ss_contacts', JSON.stringify(contacts));
+      renderContacts();
+      speak("नंबर हटा दिया गया");
+    }
+
+    window.onload = function() {
+      renderNotes();
+      renderContacts();
+      speak("स्पर्श साथी तैयार है।");
+    };
+  </script>
+</body>
+  </html>
+  
