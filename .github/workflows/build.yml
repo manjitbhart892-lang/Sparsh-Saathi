@@ -1,4 +1,4 @@
-name: Build Sparsh Hand Cricket APK
+name: Build Sparsh Sahara APK
 
 on:
   workflow_dispatch:
@@ -26,273 +26,362 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
 
-      - name: Create Game App
+      - name: Create App and Capacitor Project
         run: |
           mkdir -p app-build/www
+          
+          # 1. सम्पूर्ण दृष्टिबाधित सहायक ऐप (index.html)
           cat << 'EOF' > app-build/www/index.html
           <!DOCTYPE html>
           <html lang="hi">
           <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-          <title>स्पर्श हैंड क्रिकेट</title>
-          <style>
-          *{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,sans-serif;-webkit-tap-highlight-color:transparent;}
-          :root{--bg:#121212;--card:#1e1e1e;--pri:#ffcc00;--txt:#ffffff;--red:#e53935;--grn:#43a047;}
-          body{background:var(--bg);color:var(--txt);padding:14px;min-height:100vh;}
-          header{text-align:center;padding:14px;background:var(--card);border-radius:18px;border:2px solid var(--pri);margin-bottom:12px;}
-          .sub-title{font-size:12px;opacity:0.9;margin-top:4px;}
-          .pill-btn{background:rgba(255,204,0,0.15);color:var(--pri);border:1px solid var(--pri);padding:7px 14px;border-radius:10px;font-weight:bold;cursor:pointer;}
-          #scoreCard{background:#000;border:3px solid var(--pri);border-radius:16px;padding:16px;text-align:center;margin-bottom:14px;}
-          .runs-txt{font-size:32px;font-weight:900;color:var(--pri);margin:4px 0;}
-          .info-txt{font-size:15px;opacity:0.9;}
-          .mode-row{display:flex;gap:10px;margin-bottom:12px;}
-          .mode-btn{flex:1;padding:12px;border-radius:12px;border:2px solid #555;background:var(--card);color:#fff;font-weight:bold;font-size:14px;cursor:pointer;}
-          .mode-active{background:var(--pri)!important;color:#000!important;border-color:#fff!important;}
-          .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
-          .run-btn{background:var(--card);color:#fff;border:3px solid #444;border-radius:16px;padding:24px 0;font-size:32px;font-weight:900;cursor:pointer;}
-          .run-btn:active{transform:scale(0.95);background:var(--pri);color:#000;}
-          .big-btn{display:block;width:100%;padding:14px;border-radius:12px;font-size:16px;font-weight:bold;border:none;cursor:pointer;margin-top:10px;text-decoration:none;text-align:center;color:#fff;}
-          #profModal{display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.85);z-index:99999;padding:20px;}
-          .p-card{background:var(--card);border:2px solid var(--pri);border-radius:20px;padding:20px;margin-top:12%;text-align:center;}
-          </style>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+            <title>स्पर्श सहारा</title>
+            <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+            <style>
+              :root {
+                --bg: #000000;
+                --card: #141414;
+                --yellow: #ffeb3b;
+                --white: #ffffff;
+                --red: #ff3333;
+                --green: #00e676;
+                --blue: #29b6f6;
+              }
+              * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+                font-family: system-ui, -apple-system, sans-serif;
+                -webkit-tap-highlight-color: transparent;
+              }
+              body {
+                background: var(--bg);
+                color: var(--white);
+                min-height: 100vh;
+                display: flex;
+                flex-direction: column;
+                padding: 14px;
+              }
+              header {
+                text-align: center;
+                padding: 12px 0;
+                border-bottom: 3px solid var(--yellow);
+                margin-bottom: 16px;
+              }
+              header h1 {
+                font-size: 26px;
+                color: var(--yellow);
+              }
+              header p {
+                font-size: 13px;
+                color: #bbb;
+                margin-top: 4px;
+              }
+              .screen {
+                display: none;
+                flex-direction: column;
+                gap: 14px;
+                flex: 1;
+              }
+              .screen.active {
+                display: flex;
+              }
+              .btn {
+                background: var(--card);
+                color: var(--yellow);
+                border: 3px solid var(--yellow);
+                border-radius: 12px;
+                padding: 18px 12px;
+                font-size: 19px;
+                font-weight: bold;
+                text-align: center;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+                cursor: pointer;
+                text-decoration: none;
+                width: 100%;
+                min-height: 64px;
+              }
+              .btn:active, .btn:focus {
+                background: var(--yellow);
+                color: #000;
+                outline: 4px solid #fff;
+              }
+              .btn-red { border-color: var(--red); color: var(--red); }
+              .btn-red:active, .btn-red:focus { background: var(--red); color: #fff; }
+              .btn-green { border-color: var(--green); color: var(--green); }
+              .btn-green:active, .btn-green:focus { background: var(--green); color: #000; }
+              .btn-blue { border-color: var(--blue); color: var(--blue); }
+              .btn-blue:active, .btn-blue:focus { background: var(--blue); color: #000; }
+              .back-btn {
+                background: #222;
+                color: #fff;
+                border: 2px solid #888;
+                padding: 15px;
+                font-size: 18px;
+                font-weight: bold;
+                border-radius: 10px;
+                margin-top: auto;
+                cursor: pointer;
+              }
+              .card {
+                background: var(--card);
+                border: 2px solid #444;
+                border-radius: 10px;
+                padding: 16px;
+                font-size: 17px;
+                line-height: 1.6;
+              }
+              .card h3 {
+                color: var(--yellow);
+                margin-bottom: 8px;
+              }
+              .scanner-box {
+                border: 2px dashed var(--yellow);
+                background: #0a0a0a;
+                padding: 14px;
+                border-radius: 10px;
+                min-height: 130px;
+                max-height: 220px;
+                overflow-y: auto;
+                font-size: 18px;
+              }
+              #cameraFile { display: none; }
+              .grid-2 {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+              }
+              .input-box {
+                width: 100%;
+                padding: 12px;
+                background: #222;
+                border: 2px solid var(--yellow);
+                color: #fff;
+                font-size: 16px;
+                border-radius: 8px;
+                margin-top: 6px;
+              }
+            </style>
           </head>
           <body>
-          <header>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-          <h1 style="font-size:22px;color:var(--pri);">🏏 स्पर्श हैंड क्रिकेट</h1>
-          <button class="pill-btn" onclick="openProfile()">⋮ मंजीत प्रोफ़ाइल</button>
-          </div>
-          <div class="sub-title">स्पर्श राजकीय दृष्टिबाधित बालक इंटर कॉलेज, लालडिग्गी, गोरखपुर</div>
-          </header>
+            <header>
+              <h1 tabindex="0">स्पर्श सहारा</h1>
+              <p>स्पर्श राजकीय दृष्टिबाधित बालक इ. का., गोरखपुर</p>
+            </header>
 
-          <div class="mode-row">
-          <button class="mode-btn mode-active" id="mVsAi" onclick="setMode('ai')">🤖 कंप्यूटर मोड</button>
-          <button class="mode-btn" id="mVs2P" onclick="setMode('2p')">👥 दोस्त के साथ (2-Player)</button>
-          </div>
+            <!-- 1. होम स्क्रीन -->
+            <main id="homeScreen" class="screen active" role="region" aria-label="मुख्य मेनू">
+              <button class="btn" onclick="nav('scannerScreen', 'स्मार्ट वाचक और स्कैनर स्क्रीन खुली')" aria-label="1. स्मार्ट वाचक और पुस्तक स्कैनर">
+                📖 1. स्मार्ट वाचक (बुक स्कैनर)
+              </button>
+              <button class="btn btn-red" onclick="nav('emergencyScreen', 'आपातकालीन हेल्पलाइन स्क्रीन खुली')" aria-label="2. आपातकालीन हेल्पलाइन डायलर">
+                🚨 2. आपातकालीन हेल्पलाइन
+              </button>
+              <button class="btn btn-blue" onclick="nav('lawsScreen', 'दिव्यांग सुरक्षा कानून स्क्रीन खुली')" aria-label="3. कानून एवं सुरक्षा धाराएं">
+                ⚖️ 3. कानून एवं सुरक्षा धाराएं
+              </button>
+              <button class="btn btn-green" onclick="nav('aboutScreen', 'डेवलपर मंजीत भारती प्रोफाइल स्क्रीन खुली')" aria-label="4. डेवलपर मंजीत भारती प्रोफाइल">
+                👤 4. मंजीत भारती (डेवलपर)
+              </button>
+            </main>
 
-          <div id="scoreCard" role="region" aria-live="polite">
-          <div class="info-txt" id="gameStatus">मैच शुरू करें - कोई भी रन चुनें</div>
-          <div class="runs-txt" id="scoreDisp">स्कोर: 0 / 0</div>
-          <div class="info-txt" id="turnDisp">आपकी बैटिंग चल रही है</div>
-          </div>
+            <!-- 2. स्मार्ट वाचक स्क्रीन -->
+            <section id="scannerScreen" class="screen" role="region" aria-label="स्मार्ट वाचक स्क्रीन">
+              <div class="card">
+                <h3>📖 पुस्तक व टेक्स्ट वाचक</h3>
+                <p>कैमरा बटन दबाकर किसी भी किताब या कागज़ की फोटो लें। ऐप टेक्स्ट को तुरंत बोलकर सुनाएगा।</p>
+              </div>
+              <input type="file" id="cameraFile" accept="image/*" capture="environment" onchange="runOCR(event)">
+              <button class="btn" onclick="document.getElementById('cameraFile').click(); vibe();" aria-label="कैमरा खोलें और फोटो खींचें">
+                📷 कैमरा खोलें / फोटो खींचें
+              </button>
+              <div id="ocrStatus" style="color:#00e5ff; font-weight:bold; text-align:center;">कैमरा खोलने के लिए ऊपर क्लिक करें</div>
+              <div class="scanner-box" id="scannedText" tabindex="0">यहाँ पहचाना गया टेक्स्ट दिखाई देगा और बोला जाएगा।</div>
+              <div class="grid-2">
+                <button class="btn" onclick="speakCurrent()" aria-label="दोबारा सुनें">🔊 दोबारा सुनें</button>
+                <button class="btn btn-red" onclick="stopSpeech()" aria-label="आवाज़ रोकें">⏹️ रोकें</button>
+              </div>
+              <button class="back-btn" onclick="nav('homeScreen', 'मुख्य मेनू पर वापस आ गए')">⬅️ मुख्य मेनू पर जाएं</button>
+            </section>
 
-          <div style="text-align:center;font-size:15px;font-weight:bold;margin-bottom:8px;color:var(--pri);" id="actionPrompt">अपना रन नंबर दबाएं (1 से 6):</div>
+            <!-- 3. आपातकालीन हेल्पलाइन -->
+            <section id="emergencyScreen" class="screen" role="region" aria-label="आपातकालीन हेल्पलाइन स्क्रीन">
+              <button class="btn btn-red" onclick="dial('112', 'पुलिस एवं आपातकालीन सेवा 112')">📞 112 - राष्ट्रीय आपातकाल (Police)</button>
+              <button class="btn" onclick="dial('1076', 'मुख्यमंत्री हेल्पलाइन 1076')">📞 1076 - मुख्यमंत्री हेल्पलाइन (UP)</button>
+              <button class="btn" onclick="dial('1090', 'महिला सुरक्षा हेल्पलाइन 1090')">📞 1090 - विमेन पावर लाइन</button>
+              <button class="btn" onclick="dial('1098', 'चाइल्ड हेल्पलाइन 1098')">📞 1098 - चाइल्ड हेल्पलाइन</button>
+              <button class="btn btn-green" onclick="dial('18005990019', 'किरण दिव्यांग हेल्पलाइन')">📞 1800-599-0019 - किरण (दिव्यांग सहायता)</button>
+              <button class="btn btn-red" onclick="stopSpeech()">⏹️ आवाज़ रोकें</button>
+              <button class="back-btn" onclick="nav('homeScreen', 'मुख्य मेनू पर वापस आ गए')">⬅️ मुख्य मेनू पर जाएं</button>
+            </section>
 
-          <div class="grid">
-          <button class="run-btn" onclick="playTurn(1)">1</button>
-          <button class="run-btn" onclick="playTurn(2)">2</button>
-          <button class="run-btn" onclick="playTurn(3)">3</button>
-          <button class="run-btn" onclick="playTurn(4)">4</button>
-          <button class="run-btn" onclick="playTurn(5)">5</button>
-          <button class="run-btn" onclick="playTurn(6)">6</button>
-          </div>
+            <!-- 4. कानून व धाराएं -->
+            <section id="lawsScreen" class="screen" role="region" aria-label="कानून एवं सुरक्षा धाराएं">
+              <div class="card">
+                <h3>RPwD एक्ट 2016 - धारा 92 (उत्पीड़न पर कठोर सज़ा)</h3>
+                <p id="t92">यदि कोई व्यक्ति किसी दिव्यांगजन का सार्वजनिक अपमान करता है, डराता-धमकाता है, चोट पहुँचाता है या शोषण करता है, तो उसे 6 महीने से 5 वर्ष तक का कठोर कारावास और जुर्माना भुगतना होगा। यह गैर-जमानती अपराध है।</p>
+                <button class="btn" style="margin-top:10px;" onclick="speakSection('t92', 'धारा 92')">🔊 धारा 92 सुनें</button>
+              </div>
+              <div class="card">
+                <h3>RPwD एक्ट 2016 - धारा 3 (समानता का अधिकार)</h3>
+                <p id="t3">स्कूल, कॉलेज, नौकरी या सार्वजनिक स्थानों पर दिव्यांगजन के साथ भेदभाव गैरकानूनी है। प्रत्येक दृष्टिबाधित को सम्मान के साथ जीने का पूरा अधिकार है।</p>
+                <button class="btn" style="margin-top:10px;" onclick="speakSection('t3', 'धारा 3')">🔊 धारा 3 सुनें</button>
+              </div>
+              <div class="card">
+                <h3>RPwD एक्ट 2016 - धारा 89 (कानून उल्लंघन पर जुर्माना)</h3>
+                <p id="t89">दिव्यांगजन कानून के नियमों का उल्लंघन करने पर पहली बार 10,000 रुपये तक और दोबारा उल्लंघन पर 50,000 से लेकर 5,00,000 रुपये तक जुर्माना लगाने का सख्त प्रावधान है।</p>
+                <button class="btn" style="margin-top:10px;" onclick="speakSection('t89', 'धारा 89')">🔊 धारा 89 सुनें</button>
+              </div>
+              <button class="btn btn-red" onclick="stopSpeech()">⏹️ आवाज़ रोकें</button>
+              <button class="back-btn" onclick="nav('homeScreen', 'मुख्य मेनू पर वापस आ गए')">⬅️ मुख्य मेनू पर जाएं</button>
+            </section>
 
-          <button class="big-btn" style="background:#444;" onclick="resetGame()">🔄 नया मैच शुरू करें</button>
+            <!-- 5. डेवलपर प्रोफाइल स्क्रीन -->
+            <section id="aboutScreen" class="screen" role="region" aria-label="डेवलपर परिचय स्क्रीन">
+              <div class="card">
+                <h3>👨‍💻 डेवलपर एवं संस्थान परिचय</h3>
+                <p><strong>निर्माता:</strong> मंजीत भारती</p>
+                <p><strong>संस्थान:</strong> स्पर्श राजकीय दृष्टिबाधित बालक इंटर कॉलेज, गोरखपुर</p>
+                <div style="margin-top:12px;">
+                  <label for="devP"><strong>मोबाइल नंबर:</strong></label>
+                  <input type="tel" id="devP" class="input-box" placeholder="अपना मोबाइल नंबर डालें">
+                </div>
+                <div style="margin-top:10px;">
+                  <label for="devE"><strong>ईमेल आईडी:</strong></label>
+                  <input type="email" id="devE" class="input-box" placeholder="अपनी ईमेल आईडी डालें">
+                </div>
+                <button class="btn btn-green" style="margin-top:12px;" onclick="saveContact()">💾 विवरण सुरक्षित करें (Save)</button>
+              </div>
+              <button class="btn btn-blue" onclick="callDev()">📞 मंजीत भारती को कॉल करें</button>
+              <button class="btn" onclick="emailDev()">✉️ ईमेल भेजें</button>
+              <button class="back-btn" onclick="nav('homeScreen', 'मुख्य मेनू पर वापस आ गए')">⬅️ मुख्य मेनू पर जाएं</button>
+            </section>
 
-          <div id="profModal">
-          <div class="p-card">
-          <div style="width:60px;height:60px;border-radius:50%;background:var(--pri);color:#000;display:inline-flex;align-items:center;justify-content:center;font-size:24px;font-weight:900;margin-bottom:10px;">मं</div>
-          <h2 style="font-size:20px;">मंजीत भारती</h2>
-          <p style="color:var(--pri);font-weight:bold;margin-top:2px;">गेम निर्माता एवं डेवलपर</p>
-          <p style="font-size:13px;margin:8px 0;">स्पर्श राजकीय दृष्टिबाधित बालक इंटर कॉलेज, लालडिग्गी, गोरखपुर</p>
-          <a href="tel:9682970623" class="big-btn" style="background:var(--grn);">📞 डेवलपर को फ़ोन करें (9682970623)</a>
-          <a href="mailto:manjitbharti892@gmail.com?subject=Sparsh%20Hand%20Cricket%20Feedback" class="big-btn" style="background:#1e88e5;">✉️ फ़ीडबैक ईमेल भेजें</a>
-          <button class="big-btn" style="background:var(--red);" onclick="closeProfile()">बंद करें</button>
-          </div>
-          </div>
-
-          <script>
-          let mode = 'ai';
-          let p1Score = 0, p2Score = 0;
-          let currentInnings = 1;
-          let target = 0;
-          let p1Pick = 0;
-          let audioCtx = null;
-
-          function speak(txt) {
-            if ('speechSynthesis' in window) {
-              try {
-                window.speechSynthesis.cancel();
-                const u = new SpeechSynthesisUtterance(txt);
-                u.lang = 'hi-IN';
-                u.rate = 1.0;
-                window.speechSynthesis.speak(u);
-              } catch(e){}
-            }
-          }
-
-          function tone(f, dur) {
-            try {
-              if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-              const o = audioCtx.createOscillator();
-              const g = audioCtx.createGain();
-              o.frequency.value = f;
-              o.connect(g);
-              g.connect(audioCtx.destination);
-              o.start();
-              o.stop(audioCtx.currentTime + dur);
-            } catch(e){}
-          }
-
-          function setMode(m) {
-            mode = m;
-            document.getElementById('mVsAi').className = 'mode-btn ' + (m === 'ai' ? 'mode-active' : '');
-            document.getElementById('mVs2P').className = 'mode-btn ' + (m === '2p' ? 'mode-active' : '');
-            resetGame();
-            speak(m === 'ai' ? "कंप्यूटर मोड चुना गया। आपकी बैटिंग है।" : "दो खिलाड़ी मोड चुना गया। खिलाड़ी 1 की बैटिंग है।");
-          }
-
-          function playTurn(val) {
-            if (mode === 'ai') {
-              playVsAi(val);
-            } else {
-              playVs2P(val);
-            }
-          }
-
-          function playVsAi(userVal) {
-            const aiVal = Math.floor(Math.random() * 6) + 1;
-            if (currentInnings === 1) {
-              if (userVal === aiVal) {
-                tone(220, 0.4);
-                if ('vibrate' in navigator) navigator.vibrate([200, 100, 200]);
-                target = p1Score + 1;
-                currentInnings = 2;
-                document.getElementById('gameStatus').innerText = "अरे आप आउट हो गए!";
-                document.getElementById('turnDisp').innerText = "कंप्यूटर की बैटिंग। लक्ष्य: " + target;
-                speak("अरे आप आउट हो गए! दोनों ने चुना " + userVal + "। आपका कुल स्कोर है " + p1Score + "। अब कंप्यूटर को जीतने के लिए चाहिए " + target + " रन।");
-              } else {
-                p1Score += userVal;
-                tone(580, 0.15);
-                if ('vibrate' in navigator) navigator.vibrate(40);
-                document.getElementById('scoreDisp').innerText = "स्कोर: " + p1Score + " रन";
-                document.getElementById('gameStatus').innerText = "आपने " + userVal + " चुना, कंप्यूटर ने " + aiVal;
-                speak(userVal + " रन! कुल स्कोर " + p1Score);
-              }
-            } else {
-              if (userVal === aiVal) {
-                tone(750, 0.4);
-                if ('vibrate' in navigator) navigator.vibrate([100, 50, 100, 50, 200]);
-                document.getElementById('gameStatus').innerText = "विकेट! कंप्यूटर आउट हो गया!";
-                if (p2Score < target - 1) {
-                  speak("विकेट! कंप्यूटर आउट हो गया! बधाई हो, आप " + (target - 1 - p2Score) + " रन से मैच जीत गए!");
-                } else if (p2Score === target - 1) {
-                  speak("मैच टाई हो गया! दोनों का स्कोर बराबर रहा!");
-                }
-                setTimeout(resetGame, 4000);
-              } else {
-                p2Score += aiVal;
-                tone(420, 0.15);
-                document.getElementById('scoreDisp').innerText = "कंप्यूटर स्कोर: " + p2Score + " / लक्ष्य: " + target;
-                if (p2Score >= target) {
-                  speak("कंप्यूटर ने " + aiVal + " रन बनाए और मैच जीत लिया। बेहतर खेल अगली बार!");
-                  setTimeout(resetGame, 4000);
-                } else {
-                  speak("कंप्यूटर ने बनाए " + aiVal + " रन। कंप्यूटर को चाहिए " + (target - p2Score) + " रन।");
+            <script>
+              function vibe() { if (navigator.vibrate) navigator.vibrate(60); }
+              function speak(msg) {
+                if ('speechSynthesis' in window) {
+                  window.speechSynthesis.cancel();
+                  const u = new SpeechSynthesisUtterance(msg);
+                  u.lang = 'hi-IN';
+                  u.rate = 0.95;
+                  window.speechSynthesis.speak(u);
                 }
               }
-            }
-          }
-
-          function playVs2P(val) {
-            if (p1Pick === 0) {
-              p1Pick = val;
-              document.getElementById('actionPrompt').innerText = "अब खिलाड़ी 2 (बॉलर) अपना नंबर दबाएं:";
-              speak("खिलाड़ी 1 ने चुन लिया। अब खिलाड़ी 2 अपना नंबर दबाएं।");
-            } else {
-              const p2Pick = val;
-              if (currentInnings === 1) {
-                if (p1Pick === p2Pick) {
-                  tone(220, 0.4);
-                  if ('vibrate' in navigator) navigator.vibrate([200, 100, 200]);
-                  target = p1Score + 1;
-                  currentInnings = 2;
-                  document.getElementById('gameStatus').innerText = "विकेट! खिलाड़ी 1 आउट!";
-                  document.getElementById('turnDisp').innerText = "खिलाड़ी 2 की बैटिंग। लक्ष्य: " + target;
-                  speak("विकेट! दोनों ने चुना " + p1Pick + "। खिलाड़ी 1 आउट! कुल स्कोर " + p1Score + "। अब खिलाड़ी 2 को जीतने के लिए चाहिए " + target + " रन।");
-                } else {
-                  p1Score += p1Pick;
-                  tone(580, 0.15);
-                  document.getElementById('scoreDisp').innerText = "खिलाड़ी 1: " + p1Score + " रन";
-                  document.getElementById('gameStatus').innerText = "रन बने: " + p1Pick;
-                  speak(p1Pick + " रन! खिलाड़ी 1 का स्कोर " + p1Score);
-                }
-              } else {
-                if (p1Pick === p2Pick) {
-                  tone(750, 0.4);
-                  if ('vibrate' in navigator) navigator.vibrate([100, 50, 200]);
-                  if (p2Score < target - 1) {
-                    speak("विकेट! खिलाड़ी 2 आउट! बधाई हो खिलाड़ी 1 मैच जीत गया!");
+              function stopSpeech() { vibe(); if ('speechSynthesis' in window) window.speechSynthesis.cancel(); }
+              function nav(id, msg) {
+                vibe(); stopSpeech();
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                const el = document.getElementById(id);
+                if (el) { el.classList.add('active'); if (msg) setTimeout(() => speak(msg), 150); }
+              }
+              let lastText = "";
+              async function runOCR(e) {
+                vibe();
+                const f = e.target.files[0];
+                if (!f) return;
+                document.getElementById('ocrStatus').innerText = "अक्षर पढ़े जा रहे हैं...";
+                speak("फोटो मिल गई है। किताब का टेक्स्ट पढ़ा जा रहा है, कृपया प्रतीक्षा करें।");
+                try {
+                  const worker = await Tesseract.createWorker('hin+eng');
+                  const res = await worker.recognize(f);
+                  lastText = res.data.text.trim();
+                  await worker.terminate();
+                  if (lastText) {
+                    document.getElementById('scannedText').innerText = lastText;
+                    document.getElementById('ocrStatus').innerText = "सफलता पूर्वक पढ़ा गया!";
+                    speak("किताब में लिखा है: " + lastText);
                   } else {
-                    speak("मैच टाई हो गया!");
+                    document.getElementById('scannedText').innerText = "कोई साफ़ अक्षर नहीं मिले।";
+                    document.getElementById('ocrStatus').innerText = "टेक्स्ट नहीं मिला";
+                    speak("फोटो में कोई साफ़ अक्षर नहीं मिले। कृपया दोबारा फोटो लें।");
                   }
-                  setTimeout(resetGame, 4000);
-                } else {
-                  p2Score += p1Pick;
-                  tone(580, 0.15);
-                  document.getElementById('scoreDisp').innerText = "खिलाड़ी 2: " + p2Score + " / लक्ष्य: " + target;
-                  if (p2Score >= target) {
-                    speak("खिलाड़ी 2 ने लक्ष्य पार कर लिया और मैच जीत गया! बधाई हो!");
-                    setTimeout(resetGame, 4000);
-                  } else {
-                    speak(p1Pick + " रन! चाहिए " + (target - p2Score) + " रन।");
-                  }
+                } catch (err) {
+                  document.getElementById('ocrStatus').innerText = "स्कैन में समस्या आई।";
+                  speak("स्कैन करने में समस्या आई।");
                 }
               }
-              p1Pick = 0;
-              document.getElementById('actionPrompt').innerText = "खिलाड़ी 1 (बैट्समैन) अपना नंबर दबाएं (1 से 6):";
-            }
-          }
-
-          function resetGame() {
-            p1Score = 0; p2Score = 0;
-            currentInnings = 1;
-            target = 0;
-            p1Pick = 0;
-            document.getElementById('scoreDisp').innerText = "स्कोर: 0 रन";
-            document.getElementById('gameStatus').innerText = "नया मैच शुरू! पहली इनिंग्स";
-            document.getElementById('turnDisp').innerText = (mode === 'ai') ? "आपकी बैटिंग चल रही है" : "खिलाड़ी 1 की बैटिंग";
-            document.getElementById('actionPrompt').innerText = "अपना रन नंबर दबाएं (1 से 6):";
-          }
-
-          function openProfile() { document.getElementById('profModal').style.display = 'block'; }
-          function closeProfile() { document.getElementById('profModal').style.display = 'none'; }
-
-          window.onload = function() {
-            speak("स्पर्श हैंड क्रिकेट में आपका स्वागत है। मैच शुरू करने के लिए कोई भी रन दबाएं।");
-          };
-          </script>
+              function speakCurrent() { vibe(); if (lastText) speak(lastText); else speak("अभी कोई टेक्स्ट स्कैन नहीं है।"); }
+              function dial(num, name) { vibe(); speak(name + " पर कॉल मिलाई जा रही है।"); setTimeout(() => window.location.href = "tel:" + num, 1200); }
+              function speakSection(id, name) { vibe(); const el = document.getElementById(id); if (el) speak(name + ": " + el.innerText); }
+              function saveContact() {
+                vibe();
+                localStorage.setItem('m_p', document.getElementById('devP').value.trim());
+                localStorage.setItem('m_e', document.getElementById('devE').value.trim());
+                speak("विवरण सुरक्षित हो गया है।");
+                alert("विवरण सुरक्षित हो गया!");
+              }
+              function loadContact() {
+                document.getElementById('devP').value = localStorage.getItem('m_p') || "";
+                document.getElementById('devE').value = localStorage.getItem('m_e') || "";
+              }
+              function callDev() {
+                vibe();
+                const p = localStorage.getItem('m_p') || document.getElementById('devP').value;
+                if (p) { speak("मंजीत भारती जी को कॉल मिलाई जा रही है।"); setTimeout(() => window.location.href = "tel:" + p, 1000); }
+                else speak("कृपया पहले मोबाइल नंबर लिखकर सुरक्षित करें।");
+              }
+              function emailDev() {
+                vibe();
+                const e = localStorage.getItem('m_e') || document.getElementById('devE').value;
+                if (e) { speak("ईमेल भेजा जा रहा है।"); setTimeout(() => window.location.href = "mailto:" + e, 1000); }
+                else speak("कृपया पहले ईमेल आईडी सुरक्षित करें।");
+              }
+              window.addEventListener('load', () => {
+                loadContact();
+                speak("स्पर्श सहारा ऐप में आपका स्वागत है। स्पर्श कॉलेज गोरखपुर।");
+              });
+            </script>
           </body>
           </html>
           EOF
 
-      - name: Build Android APK
-        run: |
+          # 2. Capacitor Android इनिशियलाइज़ेशन
           cd app-build
           npm init -y
-          npm i @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
+          npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
+          
           cat << 'EOF' > capacitor.config.json
-          {"appId":"com.sparsh.handcricket","appName":"स्पर्श हैंड क्रिकेट","webDir":"www","server":{"cleartext":true}}
+          {
+            "appId": "com.sparsh.sahara",
+            "appName": "स्पर्श सहारा",
+            "webDir": "www"
+          }
           EOF
+          
           npx cap add android
-
-          # ऐप का नाम सेट करना
-          sed -i 's/<string name="app_name">.*<\/string>/<string name="app_name">स्पर्श हैंड क्रिकेट<\/string>/' android/app/src/main/res/values/strings.xml
-          sed -i 's/<string name="title_activity_main">.*<\/string>/<string name="title_activity_main">स्पर्श हैंड क्रिकेट<\/string>/' android/app/src/main/res/values/strings.xml
-
-          # कंपन परमिशन जोड़ना
-          sed -i '/<application/i <uses-permission android:name="android.permission.VIBRATE" />' android/app/src/main/AndroidManifest.xml
-
           npx cap sync android
-          cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon
-          cp app/build/outputs/apk/debug/app-debug.apk ../Sparsh-Hand-Cricket.apk
 
-      - name: Direct APK Release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # 3. Android अनुमतियाँ (कैमरा, वाइब्रेशन, कॉल, इंटरनेट)
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-permission android:name="android.permission.VIBRATE" />\n    <uses-permission android:name="android.permission.CALL_PHONE" />' $MANIFEST
+
+      - name: Build Standalone Debug APK
         run: |
-          gh release create "v3.0.$GITHUB_RUN_NUMBER" app-build/Sparsh-Hand-Cricket.apk \
-            --title "स्पर्श हैंड क्रिकेट APK v3.0.$GITHUB_RUN_NUMBER" \
-            --notes "सीधा स्पर्श हैंड क्रिकेट गेम APK डाउनलोड करें (मंजीत भारती - 9682970623)"
+          cd app-build/android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Prepare APK File
+        run: |
+          cp app-build/android/app/build/outputs/apk/debug/app-debug.apk Sparsh-Sahara.apk
+
+      - name: Publish Direct APK to GitHub Releases
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          gh release delete v1.0.0 -y || true
+          git tag -d v1.0.0 2>/dev/null || true
+          git push origin :refs/tags/v1.0.0 2>/dev/null || true
+          
+          gh release create v1.0.0 Sparsh-Sahara.apk \
+            --title "स्पर्श सहारा v1.0.0 (APK)" \
+            --notes "मंजीत भारती, स्पर्श राजकीय दृष्टिबाधित बालक इंटर कॉलेज गोरखपुर द्वारा निर्मित दृष्टिबाधित सहायक ऐप।"
             
