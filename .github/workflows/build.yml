@@ -19,7 +19,12 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
 
-      - name: Build Sparsh Saathi App
+      - name: Setup Tools & Hindi Font
+        run: |
+          pip install pillow --break-system-packages
+          curl -fsSL "https://github.com/notofonts/notofonts.github.io/raw/main/fonts/NotoSansDevanagari/hinted/ttf/NotoSansDevanagari-Bold.ttf" -o /tmp/hindi.ttf || true
+
+      - name: Build Web App
         run: |
           mkdir -p app-build/www
           cat << 'EOF' > app-build/www/index.html
@@ -141,16 +146,47 @@ jobs:
           </html>
           EOF
 
-      - name: Build APK with Capacitor
+      - name: Build Android APK
         run: |
           cd app-build
           npm init -y
           npm i @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
           cat << 'EOF' > capacitor.config.json
-          {"appId":"com.sparsh.app","appName":"स्पर्श साथी","webDir":"www","server":{"cleartext":true}}
+          {"appId":"com.sparshsaathi.app","appName":"स्पर्श साथी","webDir":"www","server":{"cleartext":true}}
           EOF
           npx cap add android
+
+          # 1. ऐप का नाम हिंदी 'स्पर्श साथी' सेट करना
+          sed -i 's/<string name="app_name">.*<\/string>/<string name="app_name">स्पर्श साथी<\/string>/' android/app/src/main/res/values/strings.xml
+          sed -i 's/<string name="title_activity_main">.*<\/string>/<string name="title_activity_main">स्पर्श साथी<\/string>/' android/app/src/main/res/values/strings.xml
+
+          # 2. नीले घेरे वाला 'स' लोगो तैयार करना
+          python3 - << 'EOF'
+          from PIL import Image, ImageDraw, ImageFont
+          import os
+          sizes = [('mipmap-mdpi',48),('mipmap-hdpi',72),('mipmap-xhdpi',96),('mipmap-xxhdpi',144),('mipmap-xxxhdpi',192)]
+          for f, s in sizes:
+              im = Image.new('RGBA', (s, s), (255, 255, 255, 255))
+              d = ImageDraw.Draw(im)
+              bw = max(3, s // 11)
+              d.ellipse([bw, bw, s - bw, s - bw], outline=(26, 115, 232), width=bw)
+              try: font = ImageFont.truetype('/tmp/hindi.ttf', int(s * 0.52))
+              except: font = ImageFont.load_default()
+              bb = d.textbbox((0, 0), "स", font=font)
+              d.text(((s - (bb[2]-bb[0]))/2 - bb[0], (s - (bb[3]-bb[1]))/2 - bb[1]), "स", fill=(13, 71, 161), font=font)
+              p = f"android/app/src/main/res/{f}"
+              os.makedirs(p, exist_ok=True)
+              im.save(f"{p}/ic_launcher.png")
+              im.save(f"{p}/ic_launcher_round.png")
+              im.save(f"{p}/ic_launcher_foreground.png")
+          EOF
+
+          # 3. पुराने डिफ़ॉल्ट आइकॉन हटाना
+          rm -rf android/app/src/main/res/mipmap-anydpi-v26
+
+          # 4. परमिशन जोड़ना
           sed -i '/<application/i <uses-permission android:name="android.permission.CAMERA" />\n<uses-permission android:name="android.permission.FLASHLIGHT" />\n<uses-feature android:name="android.hardware.camera" android:required="false" />\n<uses-permission android:name="android.permission.VIBRATE" />' android/app/src/main/AndroidManifest.xml
+          
           npx cap sync android
           cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon
 
@@ -158,7 +194,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create "v1.0.$GITHUB_RUN_NUMBER" app-build/android/app/build/outputs/apk/debug/app-debug.apk --title "स्पर्श साथी APK v1.0.$GITHUB_RUN_NUMBER" --notes "सीधा APK डाउनलोड करें" || true
+          gh release create "v1.0.$GITHUB_RUN_NUMBER" app-build/android/app/build/outputs/apk/debug/app-debug.apk --title "स्पर्श साथी APK v1.0.$GITHUB_RUN_NUMBER" --notes "सीधा नया APK डाउनलोड करें" || true
 
       - name: Backup Artifact
         uses: actions/upload-artifact@v4
