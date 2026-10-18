@@ -126,8 +126,18 @@ jobs:
           let tStream=null,isT=false;
           async function toggleFlash(){
           const b=document.getElementById('torchBox');
-          if(!isT){isT=true;b.style.display='block';sp("टॉर्च चालू है");try{tStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});const tr=tStream.getVideoTracks()[0];if(tr.getCapabilities&&tr.getCapabilities().torch)await tr.applyConstraints({advanced:[{torch:true}]});}catch(e){}}
-          else{isT=false;b.style.display='none';if(tStream){tStream.getTracks().forEach(t=>t.stop());tStream=null;}sp("टॉर्च बंद की गई");}
+          if(!isT){
+            isT=true;b.style.display='block';sp("टॉर्च चालू है");
+            try{
+              tStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+              const tr=tStream.getVideoTracks()[0];
+              if(tr.getCapabilities&&tr.getCapabilities().torch)await tr.applyConstraints({advanced:[{torch:true}]});
+            }catch(e){}
+          } else {
+            isT=false;b.style.display='none';
+            if(tStream){tStream.getTracks().forEach(t=>t.stop());tStream=null;}
+            sp("टॉर्च बंद की गई");
+          }
           }
           function speakTime(){const n=new Date();const t=n.toLocaleTimeString('hi-IN',{hour:'2-digit',minute:'2-digit'});sp("समय है "+t);}
           function speakBatt(){if('getBattery' in navigator){navigator.getBattery().then(b=>{sp("बैटरी "+Math.round(b.level*100)+" प्रतिशत है");});}else sp("बैटरी जानकारी उपलब्ध नहीं");}
@@ -135,7 +145,7 @@ jobs:
           function toggleCont(){document.body.classList.toggle('high-contrast');sp("कंट्रास्ट मोड बदला गया");}
           function playP1(){sp("इतनी शक्ति हमें देना दाता, मन का विश्वास कमजोर होना। हम चलें नेक रस्ते पे हमसे, भूलकर भी कोई भूल होना।");}
           function playP2(){sp("वह शक्ति हमें दो दयानिधे, कर्तव्य मार्ग पर डट जावें। पर सेवा पर उपकार में हम, निज जीवन सफल बना जावें।");}
-          function playAnthem(){sp("जन गण मन अधिनायक जय हे, भारत भाग्य विधाता। जय हे, जय हे, जय हे, जय जय जय जय हे!");}
+          function playAnthem(){sp("जन गण मन अधिनायक जय हे, भारत भाग्य विधाता। पंजाब सिन्धु गुजरात मराठा, द्राविड़ उत्कल बंग। विन्ध्य हिमाचल यमुना गंगा, उच्छल जलधि तरंग। जय हे, जय हे, जय हे, जय जय जय जय हे!");}
           function playSong(){sp("वन्दे मातरम्! सुजलाम् सुफलाम् मलयजशीतलाम् शस्यश्यामलाम् मातरम्!");}
           let cVal='0';
           function cIn(c){if(c==='C'){cVal='0';sp("क्लियर");}else{cVal=(cVal==='0'&&c!=='.')?c:cVal+c;sp(c);}document.getElementById('cDisp').innerText=cVal;}
@@ -152,7 +162,7 @@ jobs:
           npm init -y
           npm i @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
           cat << 'EOF' > capacitor.config.json
-          {"appId":"com.sparshsaathi.app","appName":"स्पर्श साथी","webDir":"www","server":{"cleartext":true}}
+          {"appId":"com.sparshsaathi.gorakhpur","appName":"स्पर्श साथी","webDir":"www","server":{"cleartext":true}}
           EOF
           npx cap add android
 
@@ -185,20 +195,15 @@ jobs:
           rm -rf android/app/src/main/res/mipmap-anydpi-v26
 
           # 4. परमिशन जोड़ना
-          sed -i '/<application/i <uses-permission android:name="android.permission.CAMERA" />\n<uses-permission android:name="android.permission.FLASHLIGHT" />\n<uses-feature android:name="android.hardware.camera" android:required="false" />\n<uses-permission android:name="android.permission.VIBRATE" />' android/app/src/main/AndroidManifest.xml
+          sed -i '/<application/i <uses-permission android:name="android.permission.CAMERA" />\n<uses-permission android:name="android.permission.FLASHLIGHT" />\n<uses-feature android:name="android.hardware.camera" android:required="false" />\n<uses-feature android:name="android.hardware.camera.flash" android:required="false" />\n<uses-permission android:name="android.permission.VIBRATE" />' android/app/src/main/AndroidManifest.xml
           
           npx cap sync android
           cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon
+          cp app/build/outputs/apk/debug/app-debug.apk ../Sparsh-Saathi.apk
 
       - name: Direct APK Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create "v1.0.$GITHUB_RUN_NUMBER" app-build/android/app/build/outputs/apk/debug/app-debug.apk --title "स्पर्श साथी APK v1.0.$GITHUB_RUN_NUMBER" --notes "सीधा नया APK डाउनलोड करें" || true
-
-      - name: Backup Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Sparsh-Saathi-APK
-          path: app-build/android/app/build/outputs/apk/debug/app-debug.apk
+          gh release create "v1.0.$GITHUB_RUN_NUMBER" app-build/Sparsh-Saathi.apk --title "स्पर्श साथी APK v1.0.$GITHUB_RUN_NUMBER" --notes "सीधा स्पर्श साथी APK डाउनलोड करें"
           
