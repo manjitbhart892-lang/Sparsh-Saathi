@@ -18,87 +18,131 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: '21'
-      - run: |
-          pip install pillow --break-system-packages
-          curl -fsSL "https://github.com/notofonts/notofonts.github.io/raw/main/fonts/NotoSansDevanagari/hinted/ttf/NotoSansDevanagari-Bold.ttf" -o /tmp/hindi.ttf || true
-      - run: |
+
+      - name: Build Sparsh Saathi App
+        run: |
           mkdir -p app-build/www
           cat << 'EOF' > app-build/www/index.html
           <!DOCTYPE html>
-          <html lang="hi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"><title>स्पर्श साथी</title>
+          <html lang="hi">
+          <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+          <title>स्पर्श साथी</title>
           <style>
-          *{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,sans-serif;-webkit-tap-highlight-color:transparent;}
-          :root{--bg:#f4f6fa;--card:#fff;--txt:#1a1a1a;--pri:#1a73e8;--red:#d93025;--grn:#1e8e3e;--border:#dadce0;}
-          body.high-contrast{--bg:#000;--card:#121212;--txt:#ff0;--pri:#ff0;--border:#ff0;}
+          *{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,sans-serif;}
+          :root{--bg:#f4f6fa;--card:#fff;--txt:#1a1a1a;--pri:#1a73e8;--red:#d93025;--grn:#1e8e3e;}
+          body.high-contrast{--bg:#000;--card:#121212;--txt:#ff0;--pri:#ff0;}
           body{background:var(--bg);color:var(--txt);padding:14px 14px 80px;}
-          header{position:relative;text-align:center;padding:16px;background:var(--card);border-radius:20px;box-shadow:0 2px 10px rgba(0,0,0,0.06);margin-bottom:14px;border:2px solid var(--border);}
-          .menu-btn{position:absolute;top:14px;right:14px;background:rgba(26,115,232,0.1);color:var(--pri);border:1px solid var(--pri);padding:7px 12px;border-radius:12px;font-weight:bold;cursor:pointer;}
-          .logo{display:inline-flex;align-items:center;justify-content:center;width:64px;height:64px;border-radius:50%;background:#fff;box-shadow:0 4px 12px rgba(26,115,232,0.25);font-size:36px;font-weight:900;border:5px solid #1a73e8;color:#0d47a1;margin-bottom:6px;}
-          .stop-btn{width:100%;background:var(--red);color:#fff;font-size:15px;font-weight:bold;border:none;padding:11px;border-radius:12px;margin-top:10px;cursor:pointer;}
-          .sec{font-size:16px;font-weight:800;margin:16px 0 10px 4px;}
-          .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
-          .card{background:var(--card);padding:14px 8px;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.05);text-align:center;cursor:pointer;border:2px solid var(--border);}
-          .card:active{transform:scale(0.96);}
-          .c-full{grid-column:span 2;}.icon{font-size:32px;margin-bottom:4px;}.title{font-size:15px;font-weight:bold;}.sub{font-size:12px;margin-top:4px;opacity:0.8;}
-          .c-blue{background:#1a73e8!important;color:#fff!important;}.c-grn{background:#0d904f!important;color:#fff!important;}.c-red{background:var(--red)!important;color:#fff!important;}
-          .prayer{background:var(--card);border-left:6px solid var(--pri);text-align:left;padding:12px;}
-          #profModal,#camBox,#caneBox,#torchBox{display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:999999;padding:20px;text-align:center;}
-          #profModal{background:rgba(0,0,0,0.7);}.p-box{background:var(--card);color:var(--txt);border-radius:20px;padding:20px;margin-top:15%;border:2px solid var(--pri);}
-          .p-avatar{width:65px;height:65px;border-radius:50%;background:#1a73e8;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:30px;font-weight:bold;margin-bottom:10px;}
-          .a-link{display:block;width:100%;padding:12px;border-radius:12px;margin-top:10px;text-decoration:none;font-weight:bold;color:#fff;}
-          #camBox,#caneBox{background:#000;color:#fff;}#torchBox{background:#fff!important;color:#000!important;padding-top:45%;}
-          video{width:100%;height:52vh;object-fit:cover;border-radius:16px;border:3px solid #fff;margin-top:10px;}
-          .btn-act{width:100%;padding:15px;font-size:17px;font-weight:bold;border-radius:12px;border:none;margin-top:10px;cursor:pointer;}
-          .calc-screen{background:rgba(0,0,0,0.05);padding:12px;border-radius:12px;text-align:right;font-size:24px;font-weight:bold;margin-bottom:10px;}
-          .calc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
-          .cb{padding:13px 0;font-size:18px;font-weight:bold;border-radius:10px;border:1px solid rgba(0,0,0,0.1);background:var(--card);color:var(--txt);cursor:pointer;}
-          </style></head><body>
-          <header><button class="menu-btn" onclick="openProfile()">⋮ प्रोफ़ाइल</button><div class="logo">स</div><h1 style="font-size:22px;">स्पर्श साथी</h1><div style="font-size:12px;opacity:0.85;">स्पर्श राजकीय दृष्टिबाधित इंटर कॉलेज, लालडिग्गी, गोरखपुर</div><div id="stTxt" style="margin-top:6px;font-size:13px;font-weight:bold;">स्पर्श साथी तैयार है</div><button class="stop-btn" onclick="stopAll()">■ बोलना / सायरन बंद करें</button></header>
-          <div id="profModal"><div class="p-box"><div class="p-avatar">मं</div><h2 style="font-size:20px;">मंजीत भारती (Manjeet Bharti)</h2><p style="color:var(--pri);font-weight:bold;">ऐप निर्माता एवं डेवलपर</p><p style="font-size:13px;margin:8px 0;">स्पर्श राजकीय दृष्टिबाधित इंटर कॉलेज, लालडिग्गी, गोरखपुर</p><a href="tel:919876543210" class="a-link" style="background:var(--grn);">📞 डेवलपर को कॉल करें</a><a href="mailto:manjitbharti892@gmail.com" class="a-link" style="background:var(--pri);">✉️ फ़ीडबैक ईमेल भेजें</a><button class="btn-act" style="background:var(--red);color:#fff;padding:10px;" onclick="closeProfile()">बंद करें</button></div></div>
-          <div class="sec">📷 स्मार्ट दृष्टि सहायक (AI कैमरा)</div>
-          <div class="grid"><div class="card c-full c-blue" onclick="openScanner()"><div class="icon">💵</div><div class="title" style="font-size:17px;">पैसा पहचानें (नोट स्कैनर)</div><div class="sub">नोट को सामने रखें और आवाज़ में सुनें</div></div><div class="card c-full c-grn" onclick="openCane()"><div class="icon">🦯</div><div class="title" style="font-size:17px;">स्मार्ट केन (रुकावट संसूचक)</div><div class="sub">रुकावट आने पर बीप व कंपन करेगा</div></div></div>
+          header{text-align:center;padding:16px;background:var(--card);border-radius:20px;position:relative;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,0.06);}
+          .menu-btn{position:absolute;top:14px;right:14px;background:rgba(26,115,232,0.1);color:var(--pri);border:1px solid var(--pri);padding:6px 12px;border-radius:10px;font-weight:bold;}
+          .logo{display:inline-flex;align-items:center;justify-content:center;width:60px;height:60px;border-radius:50%;background:#fff;border:4px solid #1a73e8;color:#0d47a1;font-size:32px;font-weight:900;}
+          .sec{font-size:16px;font-weight:bold;margin:16px 0 10px 4px;}
+          .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+          .card{background:var(--card);padding:14px 8px;border-radius:16px;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,0.05);cursor:pointer;}
+          .c-full{grid-column:span 2;}
+          .prayer{background:var(--card);border-left:5px solid var(--pri);text-align:left;padding:12px;}
+          #profModal,#torchBox{display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:99999;text-align:center;padding:20px;}
+          #profModal{background:rgba(0,0,0,0.7);}
+          #torchBox{background:#fff!important;color:#000!important;padding-top:50%;}
+          .p-box{background:var(--card);color:var(--txt);border-radius:20px;padding:20px;margin-top:15%;border:2px solid var(--pri);}
+          .a-btn{display:block;width:100%;padding:12px;border-radius:10px;margin-top:10px;color:#fff;text-decoration:none;font-weight:bold;}
+          .calc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;background:var(--card);padding:12px;border-radius:16px;}
+          .cb{padding:14px 0;font-size:18px;font-weight:bold;border-radius:8px;border:1px solid #ddd;background:var(--card);color:var(--txt);}
+          </style>
+          </head>
+          <body>
+          <header>
+          <button class="menu-btn" onclick="openProfile()">⋮ प्रोफ़ाइल</button>
+          <div class="logo">स</div>
+          <h1 style="font-size:22px;margin-top:6px;">स्पर्श साथी</h1>
+          <p style="font-size:12px;opacity:0.85;">स्पर्श राजकीय दृष्टिबाधित इंटर कॉलेज, गोरखपुर</p>
+          <div id="st" style="margin-top:6px;font-size:13px;font-weight:bold;color:var(--pri);">तैयार है</div>
+          <button onclick="stopAll()" style="width:100%;background:var(--red);color:#fff;border:none;padding:10px;border-radius:10px;margin-top:10px;font-weight:bold;">■ आवाज़ बंद करें</button>
+          </header>
+
+          <div id="profModal">
+          <div class="p-box">
+          <div style="width:60px;height:60px;border-radius:50%;background:#1a73e8;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:26px;font-weight:bold;margin-bottom:8px;">मं</div>
+          <h2>मंजीत भारती</h2>
+          <p style="color:var(--pri);font-weight:bold;">ऐप निर्माता एवं डेवलपर</p>
+          <p style="font-size:12px;margin:6px 0;">स्पर्श राजकीय दृष्टिबाधित इंटर कॉलेज, गोरखपुर</p>
+          <a href="tel:919876543210" class="a-btn" style="background:var(--grn);">📞 कॉल करें</a>
+          <a href="mailto:manjitbharti892@gmail.com" class="a-btn" style="background:var(--pri);">✉️ ईमेल भेजें</a>
+          <button onclick="closeProfile()" class="a-btn" style="background:var(--red);border:none;">बंद करें</button>
+          </div>
+          </div>
+
           <div class="sec">🛠️ सुगम टूल्स एवं टॉर्च</div>
-          <div class="grid"><div class="card" onclick="toggleFlash()"><div class="icon">🔦</div><div class="title">टॉर्च चालू / बंद</div><div class="sub">कैमरा व स्क्रीन लाइट</div></div><div class="card c-red" onclick="call112()"><div class="icon">🚨</div><div class="title">112 इमरजेंसी</div><div class="sub" style="color:#fff;">कॉल व सायरन</div></div><div class="card" onclick="speakTime()"><div class="icon">⏰</div><div class="title">समय व तारीख</div><div class="sub" id="clkTxt">सुनें</div></div><div class="card" onclick="speakBatt()"><div class="icon">🔋</div><div class="title">बैटरी स्थिति</div><div class="sub" id="batTxt">जांचें</div></div><div class="card" onclick="testVib()"><div class="icon">📳</div><div class="title">स्पर्श कंपन</div><div class="sub">वाइब्रेशन टेस्ट</div></div><div class="card" onclick="toggleCont()"><div class="icon">👁️</div><div class="title">पीला-काला दृश्य</div><div class="sub">हाई कंट्रास्ट</div></div></div>
-          <div class="sec">🙏 दैनिक प्रार्थना एवं राष्ट्रगान</div>
-          <div class="grid"><div class="card c-full prayer" onclick="playP1()"><div class="title">📖 प्रार्थना 1: इतनी शक्ति हमें देना दाता</div></div><div class="card c-full prayer" onclick="playP2()"><div class="title">📖 प्रार्थना 2: वह शक्ति हमें दो दयानिधे</div></div><div class="card prayer" onclick="playAnthem()"><div class="title">🇮🇳 राष्ट्रगान</div></div><div class="card prayer" onclick="playSong()"><div class="title">🌸 राष्ट्रगीत</div></div></div>
+          <div class="grid">
+          <div class="card" onclick="toggleFlash()"><div style="font-size:30px;">🔦</div><b>टॉर्च लाइट</b></div>
+          <div class="card" style="background:var(--red);color:#fff;" onclick="callSOS()"><div style="font-size:30px;">🚨</div><b>112 इमरजेंसी</b></div>
+          <div class="card" onclick="speakTime()"><div style="font-size:30px;">⏰</div><b>समय व तारीख</b></div>
+          <div class="card" onclick="speakBatt()"><div style="font-size:30px;">🔋</div><b>बैटरी स्थिति</b></div>
+          <div class="card" onclick="testVib()"><div style="font-size:30px;">📳</div><b>स्पर्श कंपन</b></div>
+          <div class="card" onclick="toggleCont()"><div style="font-size:30px;">👁️</div><b>कंट्रास्ट मोड</b></div>
+          </div>
+
+          <div class="sec">🙏 प्रार्थना एवं राष्ट्रगान</div>
+          <div class="grid">
+          <div class="card c-full prayer" onclick="playP1()"><b>📖 प्रार्थना 1: इतनी शक्ति हमें देना दाता</b></div>
+          <div class="card c-full prayer" onclick="playP2()"><b>📖 प्रार्थना 2: वह शक्ति हमें दो दयानिधे</b></div>
+          <div class="card prayer" onclick="playAnthem()"><b>🇮🇳 राष्ट्रगान</b></div>
+          <div class="card prayer" onclick="playSong()"><b>🌸 राष्ट्रगीत</b></div>
+          </div>
+
           <div class="sec">🔢 बोलने वाला कैलकुलेटर</div>
-          <div style="background:var(--card);padding:12px;border-radius:16px;margin-bottom:12px;border:2px solid var(--border);"><div class="calc-screen" id="cDisp">0</div><div class="calc-grid"><button class="cb" onclick="calcIn('C')">C</button><button class="cb" onclick="calcIn('/')">÷</button><button class="cb" onclick="calcIn('*')">×</button><button class="cb" onclick="calcIn('-')">-</button><button class="cb" onclick="calcIn('7')">7</button><button class="cb" onclick="calcIn('8')">8</button><button class="cb" onclick="calcIn('9')">9</button><button class="cb" onclick="calcIn('+')">+</button><button class="cb" onclick="calcIn('4')">4</button><button class="cb" onclick="calcIn('5')">5</button><button class="cb" onclick="calcIn('6')">6</button><button class="cb" onclick="calcEq()" style="grid-row:span 2;padding:30px 0;background:var(--grn);color:#fff;">=</button><button class="cb" onclick="calcIn('1')">1</button><button class="cb" onclick="calcIn('2')">2</button><button class="cb" onclick="calcIn('3')">3</button><button class="cb" onclick="calcIn('0')" style="grid-column:span 2;">0</button><button class="cb" onclick="calcIn('.')">.</button></div></div>
-          <div id="camBox"><h2>💵 नोट स्कैनर</h2><video id="nVid" autoplay playsinline></video><canvas id="nCan" style="display:none;"></canvas><button class="btn-act" style="background:var(--pri);color:#fff;" onclick="scanNote()">📸 नोट पहचानें</button><button class="btn-act" style="background:var(--red);color:#fff;" onclick="closeScanner()">बंद करें</button></div>
-          <div id="caneBox"><h2>🦯 स्मार्ट केन सक्रिय</h2><p id="caneMsg" style="font-size:16px;margin:8px 0;">मार्ग का परीक्षण जारी...</p><video id="cVid" autoplay playsinline></video><canvas id="cCan" style="display:none;"></canvas><button class="btn-act" style="background:var(--red);color:#fff;" onclick="closeCane()">बंद करें</button></div>
-          <div id="torchBox"><div style="font-size:30px;font-weight:900;margin-bottom:20px;">🔦 टॉर्च चालू है</div><button class="btn-act" style="background:var(--red);color:#fff;" onclick="toggleFlash()">टॉर्च बंद करें</button></div>
+          <div id="cDisp" style="background:rgba(0,0,0,0.05);padding:12px;border-radius:10px;text-align:right;font-size:24px;font-weight:bold;margin-bottom:8px;">0</div>
+          <div class="calc-grid">
+          <button class="cb" onclick="cIn('C')">C</button><button class="cb" onclick="cIn('/')">÷</button><button class="cb" onclick="cIn('*')">×</button><button class="cb" onclick="cIn('-')">-</button>
+          <button class="cb" onclick="cIn('7')">7</button><button class="cb" onclick="cIn('8')">8</button><button class="cb" onclick="cIn('9')">9</button><button class="cb" onclick="cIn('+')">+</button>
+          <button class="cb" onclick="cIn('4')">4</button><button class="cb" onclick="cIn('5')">5</button><button class="cb" onclick="cIn('6')">6</button><button class="cb" onclick="cEq()" style="grid-row:span 2;padding:26px 0;background:var(--grn);color:#fff;">=</button>
+          <button class="cb" onclick="cIn('1')">1</button><button class="cb" onclick="cIn('2')">2</button><button class="cb" onclick="cIn('3')">3</button>
+          <button class="cb" onclick="cIn('0')" style="grid-column:span 2;">0</button><button class="cb" onclick="cIn('.')">.</button>
+          </div>
+
+          <div id="torchBox">
+          <div style="font-size:30px;font-weight:bold;margin-bottom:20px;">🔦 टॉर्च चालू है</div>
+          <button onclick="toggleFlash()" class="a-btn" style="background:var(--red);border:none;width:80%;margin:auto;">टॉर्च बंद करें</button>
+          </div>
+
           <script>
-          function speak(t){if('vibrate' in navigator)try{navigator.vibrate(50);}catch(e){}document.getElementById('stTxt').innerText=t;if('speechSynthesis' in window){try{window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='hi-IN';u.rate=0.95;window.speechSynthesis.speak(u);}catch(e){}}}
-          function stopAll(){if('speechSynthesis' in window)window.speechSynthesis.cancel();stopSiren();closeScanner();closeCane();if(isTorching)toggleFlash();speak("सभी आवाजें रोक दी गई हैं");}
-          function openProfile(){document.getElementById('profModal').style.display='block';speak("मंजीत भारती प्रोफ़ाइल");}
+          function sp(t){
+          if('vibrate' in navigator)try{navigator.vibrate(40);}catch(e){}
+          document.getElementById('st').innerText=t;
+          if('speechSynthesis' in window){
+          try{window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='hi-IN';window.speechSynthesis.speak(u);}catch(e){}
+          }
+          }
+          function stopAll(){if('speechSynthesis' in window)window.speechSynthesis.cancel();if(isT)toggleFlash();sp("आवाज़ बंद की गई");}
+          function openProfile(){document.getElementById('profModal').style.display='block';sp("मंजीत भारती प्रोफ़ाइल");}
           function closeProfile(){document.getElementById('profModal').style.display='none';}
-          let aCtx=null,osc=null,sTimer=null;
-          function call112(){speak("इमरजेंसी 112 पर कॉल किया जा रहा है।");try{aCtx=new (window.AudioContext||window.webkitAudioContext)();osc=aCtx.createOscillator();osc.type='sawtooth';osc.connect(aCtx.destination);osc.start();let f=false;sTimer=setInterval(()=>{osc.frequency.setValueAtTime(f?950:550,aCtx.currentTime);f=!f;},280);}catch(e){}setTimeout(()=>{window.location.href="tel:112";},1000);}
-          function stopSiren(){if(sTimer)clearInterval(sTimer);if(osc){osc.stop();osc.disconnect();}if(aCtx)aCtx.close();}
-          let tStream=null,isTorching=false;
-          async function toggleFlash(){const box=document.getElementById('torchBox');if(!isTorching){isTorching=true;box.style.display='block';speak("टॉर्च चालू है");try{tStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});const tr=tStream.getVideoTracks()[0];if(tr.getCapabilities&&tr.getCapabilities().torch)await tr.applyConstraints({advanced:[{torch:true}]});}catch(e){}}else{isTorching=false;box.style.display='none';if(tStream){tStream.getTracks().forEach(t=>t.stop());tStream=null;}speak("टॉर्च बंद की गई");}}
-          let nStream=null;
-          async function openScanner(){document.getElementById('camBox').style.display='block';speak("नोट स्कैनर चालू है। नोट आगे रखें और नोट पहचानें दबाएं।");try{nStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});document.getElementById('nVid').srcObject=nStream;}catch(e){speak("कैमरा शुरू नहीं हुआ");}}
-          function closeScanner(){document.getElementById('camBox').style.display='none';if(nStream){nStream.getTracks().forEach(t=>t.stop());nStream=null;}}
-          function scanNote(){const v=document.getElementById('nVid'),c=document.getElementById('nCan');if(!v.videoWidth)return;c.width=v.videoWidth;c.height=v.videoHeight;const ctx=c.getContext('2d');ctx.drawImage(v,0,0,c.width,c.height);const d=ctx.getImageData(c.width/4,c.height/4,c.width/2,c.height/2).data;let r=0,g=0,b=0,cnt=d.length/4;for(let i=0;i<d.length;i+=4){r+=d[i];g+=d[i+1];b+=d[i+2];}r/=cnt;g/=cnt;b/=cnt;const mx=Math.max(r,g,b),mn=Math.min(r,g,b),df=mx-mn;let h=0;if(df){if(mx===r)h=((g-b)/df)%6;else if(mx===g)h=(b-r)/df+2;else h=(r-g)/df+4;h=Math.round(h*60);if(h<0)h+=360;}const s=mx?df/mx:0,val=mx/255;let res="नोट पहचाना जा रहा है, कृपया रोशनी में सीधा रखें";if(s<0.18&&val>0.35)res="यह पाँच सौ रुपये का नोट है। (500 Rupees Note)";else if(h>=160&&h<=215)res="यह पचास रुपये का नोट है। (50 Rupees Note)";else if(h>=220&&h<=290)res="यह एक सौ रुपये का नोट है। (100 Rupees Note)";else if(h>=25&&h<=55&&r>g)res="यह दो सौ रुपये का नोट है। (200 Rupees Note)";else if(h>=60&&h<=100)res="यह बीस रुपये का नोट है। (20 Rupees Note)";else if((h<25||h>340)&&r>b)res="यह दस रुपये का नोट है। (10 Rupees Note)";speak(res);}
-          let cnStream=null,cnLoop=null,prevAvg=0;
-          async function openCane(){document.getElementById('caneBox').style.display='block';speak("स्मार्ट केन चालू है। रुकावट पर बीप बजेगा।");try{cnStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});document.getElementById('cVid').srcObject=cnStream;cnLoop=setInterval(chkObstacle,500);}catch(e){speak("कैमरा शुरू नहीं हुआ");}}
-          function closeCane(){document.getElementById('caneBox').style.display='none';if(cnLoop)clearInterval(cnLoop);if(cnStream){cnStream.getTracks().forEach(t=>t.stop());cnStream=null;}}
-          function chkObstacle(){const v=document.getElementById('cVid'),c=document.getElementById('cCan');if(!v.videoWidth)return;c.width=60;c.height=60;const ctx=c.getContext('2d');ctx.drawImage(v,0,0,60,60);const d=ctx.getImageData(0,0,60,60).data;let sum=0;for(let i=0;i<d.length;i+=4)sum+=(d[i]+d[i+1]+d[i+2])/3;const cur=sum/3600;if(prevAvg&&Math.abs(cur-prevAvg)>22){try{const ac=new (window.AudioContext||window.webkitAudioContext)();const oc=ac.createOscillator();oc.frequency.value=880;oc.connect(ac.destination);oc.start();setTimeout(()=>{oc.stop();ac.close();},180);}catch(e){}if('vibrate' in navigator)navigator.vibrate([150,80,150]);document.getElementById('caneMsg').innerText="⚠️ रुकावट पास में है!";}else{document.getElementById('caneMsg').innerText="मार्ग साफ़ है...";}prevAvg=cur;}
-          function speakTime(){const n=new Date();const t=n.toLocaleTimeString('hi-IN',{hour:'2-digit',minute:'2-digit'});const d=n.toLocaleDateString('hi-IN',{weekday:'long',day:'numeric',month:'long'});document.getElementById('clkTxt').innerText=t;speak("समय है "+t+", और आज "+d+" है।");}
-          function speakBatt(){if('getBattery' in navigator){navigator.getBattery().then(b=>{const p=Math.round(b.level*100);document.getElementById('batTxt').innerText=p+"%";speak("बैटरी "+p+" प्रतिशत है, "+(b.charging?"चार्ज हो रहा है":"चार्जर पर नहीं है"));});}else speak("बैटरी जानकारी उपलब्ध नहीं है");}
-          function testVib(){if('vibrate' in navigator){navigator.vibrate([120,60,180,60,300]);speak("स्पर्श कंपन सक्रिय है");}else speak("कंपन सपोर्ट नहीं है");}
-          function toggleCont(){document.body.classList.toggle('high-contrast');speak(document.body.classList.contains('high-contrast')?"पीला-काला मोड चालू":"सामान्य मोड चालू");}
-          function playP1(){speak("प्रार्थना। इतनी शक्ति हमें देना दाता, मन का विश्वास कमजोर होना। हम चलें नेक रस्ते पे हमसे, भूलकर भी कोई भूल होना। दूर अज्ञान के हो अँधेरे, तू हमें ज्ञान की रौशनी दे। हर बुराई से बचते रहें हम, जितनी भी दे भली ज़िन्दगी दे।");}
-          function playP2(){speak("प्रार्थना। वह शक्ति हमें दो दयानिधे, कर्तव्य मार्ग पर डट जावें। पर सेवा पर उपकार में हम, निज जीवन सफल बना जावें। हम दीन-दुखी निबलों-विकलों के, सेवक बन संताप हरें।");}
-          function playAnthem(){speak("राष्ट्रगान। जन गण मन अधिनायक जय हे, भारत भाग्य विधाता। पंजाब सिन्धु गुजरात मराठा, द्राविड़ उत्कल बंग। विन्ध्य हिमाचल यमुना गंगा, उच्छल जलधि तरंग। जय हे, जय हे, जय हे, जय जय जय जय हे!");}
-          function playSong(){speak("राष्ट्रगीत। वन्दे मातरम्! सुजलाम्, सुफलाम्, मलयजशीतलाम्, शस्यश्यामलाम्, मातरम्! वन्दे मातरम्!");}
-          let curC='0';
-          function calcIn(c){if(c==='C'){curC='0';speak("क्लियर");}else{curC=(curC==='0'&&c!=='.')?c:curC+c;let t=c;if(c==='+')t="धन";if(c==='-')t="ऋण";if(c==='*')t="गुणा";if(c==='/')t="भाग";speak(t);}document.getElementById('cDisp').innerText=curC;}
-          function calcEq(){try{const r=eval(curC);speak("बराबर है "+r);curC=String(r);}catch(e){speak("गलत गणना");curC='0';}document.getElementById('cDisp').innerText=curC;}
-          window.onload=function(){speak("स्पर्श साथी में आपका स्वागत है।");};
-          </script></body></html>
+          function callSOS(){sp("इमरजेंसी 112 पर कॉल किया जा रहा है");setTimeout(()=>{window.location.href="tel:112";},1000);}
+          let tStream=null,isT=false;
+          async function toggleFlash(){
+          const b=document.getElementById('torchBox');
+          if(!isT){isT=true;b.style.display='block';sp("टॉर्च चालू है");try{tStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});const tr=tStream.getVideoTracks()[0];if(tr.getCapabilities&&tr.getCapabilities().torch)await tr.applyConstraints({advanced:[{torch:true}]});}catch(e){}}
+          else{isT=false;b.style.display='none';if(tStream){tStream.getTracks().forEach(t=>t.stop());tStream=null;}sp("टॉर्च बंद की गई");}
+          }
+          function speakTime(){const n=new Date();const t=n.toLocaleTimeString('hi-IN',{hour:'2-digit',minute:'2-digit'});sp("समय है "+t);}
+          function speakBatt(){if('getBattery' in navigator){navigator.getBattery().then(b=>{sp("बैटरी "+Math.round(b.level*100)+" प्रतिशत है");});}else sp("बैटरी जानकारी उपलब्ध नहीं");}
+          function testVib(){if('vibrate' in navigator){navigator.vibrate([120,60,180]);sp("कंपन सक्रिय है");}else sp("कंपन सपोर्ट नहीं है");}
+          function toggleCont(){document.body.classList.toggle('high-contrast');sp("कंट्रास्ट मोड बदला गया");}
+          function playP1(){sp("इतनी शक्ति हमें देना दाता, मन का विश्वास कमजोर होना। हम चलें नेक रस्ते पे हमसे, भूलकर भी कोई भूल होना।");}
+          function playP2(){sp("वह शक्ति हमें दो दयानिधे, कर्तव्य मार्ग पर डट जावें। पर सेवा पर उपकार में हम, निज जीवन सफल बना जावें।");}
+          function playAnthem(){sp("जन गण मन अधिनायक जय हे, भारत भाग्य विधाता। जय हे, जय हे, जय हे, जय जय जय जय हे!");}
+          function playSong(){sp("वन्दे मातरम्! सुजलाम् सुफलाम् मलयजशीतलाम् शस्यश्यामलाम् मातरम्!");}
+          let cVal='0';
+          function cIn(c){if(c==='C'){cVal='0';sp("क्लियर");}else{cVal=(cVal==='0'&&c!=='.')?c:cVal+c;sp(c);}document.getElementById('cDisp').innerText=cVal;}
+          function cEq(){try{const r=eval(cVal);sp("बराबर है "+r);cVal=String(r);}catch(e){sp("गलत");cVal='0';}document.getElementById('cDisp').innerText=cVal;}
+          window.onload=function(){sp("स्पर्श साथी तैयार है");};
+          </script>
+          </body>
+          </html>
           EOF
 
+      - name: Build APK with Capacitor
+        run: |
           cd app-build
           npm init -y
           npm i @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
@@ -106,36 +150,19 @@ jobs:
           {"appId":"com.sparsh.app","appName":"स्पर्श साथी","webDir":"www","server":{"cleartext":true}}
           EOF
           npx cap add android
-
-          python3 - << 'EOF'
-          from PIL import Image, ImageDraw, ImageFont
-          import os
-          for f, s in [('mipmap-mdpi',48),('mipmap-hdpi',72),('mipmap-xhdpi',96),('mipmap-xxhdpi',144),('mipmap-xxxhdpi',192)]:
-              im = Image.new('RGBA', (s, s), (255, 255, 255, 255))
-              d = ImageDraw.Draw(im)
-              bw = max(3, s // 11)
-              m = bw // 2 + 1
-              d.ellipse([m, m, s - m, s - m], outline=(26, 115, 232), width=bw)
-              try: font = ImageFont.truetype('/tmp/hindi.ttf', int(s * 0.52))
-              except: font = ImageFont.load_default()
-              bb = d.textbbox((0, 0), "स", font=font)
-              d.text(((s - (bb[2]-bb[0]))/2 - bb[0], (s - (bb[3]-bb[1]))/2 - bb[1]), "स", fill=(13, 71, 161), font=font)
-              p = f"android/app/src/main/res/{f}"
-              os.makedirs(p, exist_ok=True)
-              im.save(f"{p}/ic_launcher.png")
-              im.save(f"{p}/ic_launcher_round.png")
-              im.save(f"{p}/ic_launcher_foreground.png")
-          EOF
-
-          rm -rf android/app/src/main/res/mipmap-anydpi-v26
-          sed -i '/<application/i <uses-permission android:name="android.permission.CAMERA" />\n<uses-permission android:name="android.permission.FLASHLIGHT" />\n<uses-feature android:name="android.hardware.camera" android:required="false" />\n<uses-feature android:name="android.hardware.camera.flash" android:required="false" />\n<uses-permission android:name="android.permission.VIBRATE" />\n<uses-permission android:name="android.permission.INTERNET" />' android/app/src/main/AndroidManifest.xml
+          sed -i '/<application/i <uses-permission android:name="android.permission.CAMERA" />\n<uses-permission android:name="android.permission.FLASHLIGHT" />\n<uses-feature android:name="android.hardware.camera" android:required="false" />\n<uses-permission android:name="android.permission.VIBRATE" />' android/app/src/main/AndroidManifest.xml
           npx cap sync android
-
           cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon
-          gh release create "v1.0.${{ github.run_number }}" app/build/outputs/apk/debug/app-debug.apk --title "स्पर्श साथी APK v1.0.${{ github.run_number }}" --notes "सीधा APK डाउनलोड करें" || true
 
-      - uses: actions/upload-artifact@v4
+      - name: Direct APK Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "v1.0.$GITHUB_RUN_NUMBER" app-build/android/app/build/outputs/apk/debug/app-debug.apk --title "स्पर्श साथी APK v1.0.$GITHUB_RUN_NUMBER" --notes "सीधा APK डाउनलोड करें" || true
+
+      - name: Backup Artifact
+        uses: actions/upload-artifact@v4
         with:
-          name: Sparsh-Saathi-Finished-APK
+          name: Sparsh-Saathi-APK
           path: app-build/android/app/build/outputs/apk/debug/app-debug.apk
           
