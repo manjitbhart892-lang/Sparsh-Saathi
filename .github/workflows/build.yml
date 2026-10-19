@@ -1,4 +1,4 @@
-name: Build MB Player APK
+name: MB Player Permanent Builder
 
 on:
   workflow_dispatch:
@@ -15,6 +15,14 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install Pillow
+        run: pip install --quiet pillow
+
       - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
@@ -26,480 +34,18 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
 
-      - name: Create MB Player & Setup Capacitor
+      - name: Build Capacitor & Setup App
         run: |
           mkdir -p app-build/www
 
-          cat << 'EOF' > app-build/www/index.html
-          <!DOCTYPE html>
-          <html lang="hi">
-          <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-            <title>MB Player</title>
-            <style>
-              :root {
-                --bg-primary: #0a0c10;
-                --bg-secondary: #141721;
-                --accent-blue: #2563eb;
-                --accent-blue-light: #38bdf8;
-                --accent-glow: rgba(37, 99, 235, 0.45);
-                --text-main: #f9fafb;
-                --text-sub: #9ca3af;
-                --card-bg: rgba(20, 23, 33, 0.85);
-                --border: #222738;
-              }
-              [data-theme="light"] {
-                --bg-primary: #f8fafc;
-                --bg-secondary: #ffffff;
-                --accent-blue: #1d4ed8;
-                --accent-blue-light: #0284c7;
-                --accent-glow: rgba(29, 78, 216, 0.2);
-                --text-main: #0f172a;
-                --text-sub: #475569;
-                --card-bg: rgba(255, 255, 255, 0.95);
-                --border: #e2e8f0;
-              }
-              * {
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
-                user-select: none;
-                -webkit-tap-highlight-color: transparent;
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-              }
-              body {
-                background-color: var(--bg-primary);
-                color: var(--text-main);
-                min-height: 100vh;
-                display: flex;
-                flex-direction: column;
-                overflow-x: hidden;
-              }
-              header {
-                background: var(--bg-secondary);
-                padding: 10px 16px;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                border-bottom: 1px solid var(--border);
-                position: sticky;
-                top: 0;
-                z-index: 100;
-              }
-              .brand-container {
-                display: flex;
-                align-items: center;
-                gap: 12px;
-              }
-              .app-logo {
-                width: 44px;
-                height: 44px;
-                border-radius: 12px;
-                background: linear-gradient(145deg, #1d4ed8 0%, #2563eb 45%, #0284c7 100%);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                box-shadow: 0 4px 14px var(--accent-glow);
-              }
-              .app-logo svg {
-                width: 22px;
-                height: 22px;
-                transform: translateX(1px);
-              }
-              .brand-title h1 {
-                font-size: 1.2rem;
-                font-weight: 800;
-              }
-              .brand-title span {
-                font-size: 0.72rem;
-                color: var(--accent-blue-light);
-                font-weight: 600;
-                display: block;
-              }
-              .header-actions {
-                display: flex;
-                gap: 8px;
-              }
-              .btn-action {
-                background: var(--card-bg);
-                border: 1px solid var(--border);
-                color: var(--text-main);
-                padding: 7px 11px;
-                border-radius: 8px;
-                cursor: pointer;
-                font-size: 0.82rem;
-                font-weight: 600;
-              }
-              .tabs-bar {
-                display: flex;
-                background: var(--bg-secondary);
-                border-bottom: 1px solid var(--border);
-                padding: 4px 16px;
-                gap: 16px;
-              }
-              .tab-item {
-                padding: 10px 14px;
-                background: none;
-                border: none;
-                color: var(--text-sub);
-                font-weight: 600;
-                font-size: 0.92rem;
-                cursor: pointer;
-                border-bottom: 3px solid transparent;
-                display: flex;
-                align-items: center;
-                gap: 6px;
-              }
-              .tab-item.active {
-                color: var(--accent-blue-light);
-                border-bottom-color: var(--accent-blue);
-              }
-              main {
-                flex: 1;
-                padding: 16px;
-                display: flex;
-                flex-direction: column;
-                gap: 16px;
-                max-width: 900px;
-                margin: 0 auto;
-                width: 100%;
-              }
-              .player-card {
-                position: relative;
-                background: #000;
-                border-radius: 16px;
-                overflow: hidden;
-                width: 100%;
-                aspect-ratio: 16 / 9;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-              }
-              video {
-                width: 100%;
-                height: 100%;
-                object-fit: contain;
-              }
-              .gesture-hud {
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                background: rgba(10, 12, 18, 0.85);
-                border: 1px solid rgba(255, 255, 255, 0.15);
-                padding: 14px 24px;
-                border-radius: 28px;
-                color: #fff;
-                font-size: 1.1rem;
-                display: flex;
-                align-items: center;
-                gap: 12px;
-                opacity: 0;
-                pointer-events: none;
-                transition: opacity 0.2s ease;
-                z-index: 40;
-              }
-              .gesture-hud.show { opacity: 1; }
-              .gesture-track {
-                width: 80px;
-                height: 6px;
-                background: rgba(255, 255, 255, 0.25);
-                border-radius: 4px;
-                overflow: hidden;
-              }
-              .gesture-fill {
-                height: 100%;
-                background: var(--accent-blue-light);
-                width: 50%;
-              }
-              .touch-zones {
-                position: absolute;
-                inset: 0;
-                display: flex;
-                z-index: 20;
-              }
-              .zone { flex: 1; height: 100%; }
-              .controls-panel {
-                position: absolute;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                background: linear-gradient(transparent, rgba(0, 0, 0, 0.92));
-                padding: 14px 16px;
-                display: flex;
-                flex-direction: column;
-                gap: 8px;
-                z-index: 30;
-                transition: opacity 0.3s;
-              }
-              .controls-panel.hidden { opacity: 0; pointer-events: none; }
-              .seek-bar-container {
-                width: 100%;
-                height: 5px;
-                background: rgba(255, 255, 255, 0.3);
-                border-radius: 3px;
-                cursor: pointer;
-              }
-              .seek-filled {
-                height: 100%;
-                background: var(--accent-blue-light);
-                width: 0%;
-              }
-              .controls-row {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-              }
-              .btn-group { display: flex; align-items: center; gap: 12px; }
-              .ctrl-icon-btn {
-                background: none;
-                border: none;
-                color: #fff;
-                font-size: 1.25rem;
-                cursor: pointer;
-              }
-              .playback-time { font-size: 0.8rem; color: #cbd5e1; }
-              .lock-pill {
-                position: absolute;
-                top: 14px;
-                left: 14px;
-                z-index: 35;
-                background: rgba(0, 0, 0, 0.65);
-                border: 1px solid rgba(255,255,255,0.2);
-                color: #fff;
-                padding: 6px 12px;
-                border-radius: 20px;
-                font-size: 0.8rem;
-                cursor: pointer;
-              }
-              .playlist-card {
-                background: var(--bg-secondary);
-                border-radius: 14px;
-                border: 1px solid var(--border);
-                padding: 16px;
-              }
-              .picker-row {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-              }
-              .btn-file-picker {
-                background: linear-gradient(135deg, var(--accent-blue), #0284c7);
-                color: #fff;
-                padding: 10px 20px;
-                border-radius: 10px;
-                font-weight: 600;
-                cursor: pointer;
-                font-size: 0.9rem;
-              }
-              input[type="file"] { display: none; }
-              .file-status {
-                margin-top: 10px;
-                padding: 10px 14px;
-                border-radius: 8px;
-                background: var(--card-bg);
-                border: 1px solid var(--border);
-                font-size: 0.85rem;
-                color: var(--accent-blue-light);
-              }
-              .developer-box {
-                background: var(--bg-secondary);
-                border: 1px solid var(--border);
-                border-radius: 14px;
-                padding: 14px 18px;
-                display: flex;
-                align-items: center;
-                gap: 14px;
-              }
-              .dev-badge {
-                width: 48px;
-                height: 48px;
-                border-radius: 50%;
-                background: linear-gradient(135deg, #10b981, #2563eb);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-weight: 700;
-                color: #fff;
-              }
-            </style>
-          </head>
-          <body>
-            <header>
-              <div class="brand-container">
-                <div class="app-logo">
-                  <svg viewBox="0 0 24 24" fill="none">
-                    <path d="M7 5.25C7 4.22 8.13 3.6 8.98 4.16L19.26 10.91C20.04 11.42 20.04 12.58 19.26 13.09L8.98 19.84C8.13 20.4 7 19.78 7 18.75V5.25Z" fill="#ffffff"/>
-                  </svg>
-                </div>
-                <div class="brand-title">
-                  <h1>MB Player</h1>
-                  <span>Pro Offline Media</span>
-                </div>
-              </div>
-              <div class="header-actions">
-                <button class="btn-action" onclick="toggleTheme()">🌙</button>
-              </div>
-            </header>
-            <nav class="tabs-bar">
-              <button class="tab-item active" id="tab-v" onclick="switchMediaTab('video')">🎬 वीडियो</button>
-              <button class="tab-item" id="tab-a" onclick="switchMediaTab('audio')">🎵 ऑडियो</button>
-            </nav>
-            <main>
-              <div class="player-card" id="player-container">
-                <video id="media-player" playsinline></video>
-                <button class="lock-pill" id="lock-btn" onclick="toggleLock()">🔓 अनलॉक</button>
-                <div class="gesture-hud" id="hud">
-                  <span id="hud-icon">🔊</span>
-                  <span id="hud-val">50%</span>
-                  <div class="gesture-track"><div class="gesture-fill" id="hud-fill"></div></div>
-                </div>
-                <div class="touch-zones" id="touch-zones">
-                  <div class="zone" id="zone-bright"></div>
-                  <div class="zone" id="zone-vol"></div>
-                </div>
-                <div class="controls-panel" id="controls-panel">
-                  <div class="seek-bar-container" id="seek-container">
-                    <div class="seek-filled" id="seek-progress"></div>
-                  </div>
-                  <div class="controls-row">
-                    <div class="btn-group">
-                      <button class="ctrl-icon-btn" id="play-btn" onclick="togglePlayState()">▶</button>
-                      <span class="playback-time" id="time-txt">00:00 / 00:00</span>
-                    </div>
-                    <div class="btn-group">
-                      <button class="ctrl-icon-btn" id="speed-btn" onclick="cycleSpeed()">1.0x</button>
-                      <button class="ctrl-icon-btn" onclick="toggleFullscreen()">⛶</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <section class="playlist-card">
-                <div class="picker-row">
-                  <div>
-                    <h2 style="font-size: 1rem; font-weight: 700;">फ़ाइल खोलें</h2>
-                    <p style="font-size: 0.8rem; color: var(--text-sub);">कोई भी वीडियो या गाना चुनें</p>
-                  </div>
-                  <label class="btn-file-picker" for="file-upload">चुनें</label>
-                  <input type="file" id="file-upload" accept="video/*,audio/*" onchange="handleFileSelect(event)">
-                </div>
-                <div class="file-status">▶ <span id="loaded-file-name">कोई फ़ाइल नहीं चुनी गई है</span></div>
-              </section>
-              <section class="developer-box">
-                <div class="dev-badge">MB</div>
-                <div>
-                  <h3 style="font-size: 0.95rem;">मनजीत भारती (Manjeet Bharti)</h3>
-                  <p style="font-size: 0.8rem; color: var(--text-sub);">डेवलपर • MB Player</p>
-                  <p style="font-size: 0.72rem; color: #10b981; font-weight: 600;">✓ 100% विज्ञापन-मुक्त • कोई लॉगिन आवश्यक नहीं</p>
-                </div>
-              </section>
-            </main>
-            <script>
-              let isLocked = false, isDarkMode = true, currentSpeed = 1, currentBrightness = 100;
-              let touchStartX = 0, touchStartY = 0, lastTap = 0, activeSide = null;
-              const speeds = [0.5, 1.0, 1.25, 1.5, 2.0];
-              const media = document.getElementById('media-player');
-              const playBtn = document.getElementById('play-btn');
-              const seekProgress = document.getElementById('seek-progress');
-              const seekContainer = document.getElementById('seek-container');
-              const timeTxt = document.getElementById('time-txt');
-              const hud = document.getElementById('hud');
-              const hudIcon = document.getElementById('hud-icon');
-              const hudVal = document.getElementById('hud-val');
-              const hudFill = document.getElementById('hud-fill');
-              const playerContainer = document.getElementById('player-container');
-              const controlsPanel = document.getElementById('controls-panel');
-              const lockBtn = document.getElementById('lock-btn');
-
-              function toggleTheme() {
-                isDarkMode = !isDarkMode;
-                document.body.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
-              }
-              function switchMediaTab(t) {
-                document.getElementById('tab-v').classList.toggle('active', t === 'video');
-                document.getElementById('tab-a').classList.toggle('active', t === 'audio');
-                document.getElementById('file-upload').setAttribute('accept', t === 'video' ? 'video/*' : 'audio/*');
-              }
-              function handleFileSelect(e) {
-                const f = e.target.files[0];
-                if (f) {
-                  media.src = URL.createObjectURL(f);
-                  media.play();
-                  playBtn.innerText = '⏸';
-                  document.getElementById('loaded-file-name').innerText = f.name;
-                }
-              }
-              function togglePlayState() {
-                if (isLocked) return;
-                media.paused ? (media.play(), playBtn.innerText = '⏸') : (media.pause(), playBtn.innerText = '▶');
-              }
-              function toggleLock() {
-                isLocked = !isLocked;
-                controlsPanel.classList.toggle('hidden', isLocked);
-                lockBtn.innerText = isLocked ? '🔒 लॉक' : '🔓 अनलॉक';
-              }
-              function cycleSpeed() {
-                if (isLocked) return;
-                currentSpeed = speeds[(speeds.indexOf(currentSpeed) + 1) % speeds.length];
-                media.playbackRate = currentSpeed;
-                document.getElementById('speed-btn').innerText = currentSpeed + 'x';
-              }
-              function toggleFullscreen() {
-                !document.fullscreenElement ? playerContainer.requestFullscreen() : document.exitFullscreen();
-              }
-              media.addEventListener('timeupdate', () => {
-                if (!media.duration) return;
-                seekProgress.style.width = (media.currentTime / media.duration) * 100 + '%';
-                timeTxt.innerText = `${fmt(media.currentTime)} / ${fmt(media.duration)}`;
-              });
-              seekContainer.addEventListener('click', (e) => {
-                if (isLocked || !media.duration) return;
-                const r = seekContainer.getBoundingClientRect();
-                media.currentTime = ((e.clientX - r.left) / r.width) * media.duration;
-              });
-              function fmt(s) {
-                const m = Math.floor(s / 60), sec = Math.floor(s % 60);
-                return `${m < 10 ? '0' : ''}${m}:${sec < 10 ? '0' : ''}${sec}`;
-              }
-              let hudT;
-              function showHUD(ico, val, pct) {
-                clearTimeout(hudT);
-                hudIcon.innerText = ico; hudVal.innerText = val;
-                hudFill.style.width = Math.min(Math.max(pct, 0), 100) + '%';
-                hud.classList.add('show');
-                hudT = setTimeout(() => hud.classList.remove('show'), 800);
-              }
-              const touch = document.getElementById('touch-zones');
-              touch.addEventListener('touchstart', (e) => {
-                if (isLocked) return;
-                const t = e.touches[0];
-                touchStartX = t.clientX; touchStartY = t.clientY;
-                const r = touch.getBoundingClientRect();
-                activeSide = (touchStartX - r.left < r.width / 2) ? 'left' : 'right';
-                const now = Date.now();
-                if (now - lastTap < 280) {
-                  activeSide === 'left' ? (media.currentTime = Math.max(0, media.currentTime - 10), showHUD('⏪', '-10s', 0)) : (media.currentTime = Math.min(media.duration || 0, media.currentTime + 10), showHUD('⏩', '+10s', 100));
-                }
-                lastTap = now;
-              }, { passive: true });
-              touch.addEventListener('touchmove', (e) => {
-                if (isLocked) return;
-                const dY = touchStartY - e.touches[0].clientY;
-                touchStartY = e.touches[0].clientY;
-                if (activeSide === 'left') {
-                  currentBrightness = Math.min(Math.max(currentBrightness + (dY * 0.45), 20), 160);
-                  playerContainer.style.filter = `brightness(${currentBrightness}%)`;
-                                    showHUD('☀️', Math.round(currentBrightness) + '%', (currentBrightness / 160) * 100);
-                } else {
-                  media.volume = Math.min(Math.max(media.volume + (dY * 0.006), 0), 1);
-                  showHUD('🔊', Math.round(media.volume * 100) + '%', media.volume * 100);
-                }
-              }, { passive: true });
-            </script>
-          </body>
-          </html>
-          EOF
+          # मुख्य index.html को कॉपी करेगा
+          if [ -f "index.html" ]; then
+            cp index.html app-build/www/index.html
+          elif [ -f "www/index.html" ]; then
+            cp www/index.html app-build/www/index.html
+          else
+            echo "<h1>MB Player Ready</h1>" > app-build/www/index.html
+          fi
 
           cd app-build
           npm init -y
@@ -518,6 +64,31 @@ jobs:
 
           npx cap add android
 
+          # होमस्क्रीन के लिए लोगो (Cyan + Deep Blue Play Arrow)
+          python3 -c "
+          from PIL import Image, ImageDraw
+          import os
+
+          img = Image.new('RGBA', (512, 512), (0, 0, 0, 0))
+          draw = ImageDraw.Draw(img)
+          draw.rounded_rectangle([16, 16, 496, 496], radius=115, fill=(15, 23, 42, 255), outline=(0, 229, 255, 255), width=10)
+          draw.rounded_rectangle([36, 36, 476, 476], radius=95, fill=(16, 32, 60, 255))
+          draw.polygon([(190, 140), (190, 372), (385, 256)], fill=(255, 255, 255, 255))
+          draw.ellipse([355, 245, 380, 270], fill=(0, 229, 255, 255))
+
+          res_dir = 'android/app/src/main/res'
+          sizes = {'mipmap-mdpi': 48, 'mipmap-hdpi': 72, 'mipmap-xhdpi': 96, 'mipmap-xxhdpi': 144, 'mipmap-xxxhdpi': 192}
+          for folder, s in sizes.items():
+              p = os.path.join(res_dir, folder)
+              os.makedirs(p, exist_ok=True)
+              resized = img.resize((s, s), Image.Resampling.LANCZOS)
+              resized.save(os.path.join(p, 'ic_launcher.png'))
+              resized.save(os.path.join(p, 'ic_launcher_round.png'))
+              resized.save(os.path.join(p, 'ic_launcher_foreground.png'))
+          "
+
+          # ऑटो-रोटेट और स्टोरेज/मीडिया परमिशन जोड़ें
+          sed -i 's/android:screenOrientation="[^"]*"/android:screenOrientation="sensor"/g' android/app/src/main/AndroidManifest.xml || true
           sed -i '/<application/i \
               <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />\
               <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />\
@@ -537,13 +108,13 @@ jobs:
           mkdir -p release-apk
           cp app-build/android/app/build/outputs/apk/debug/app-debug.apk release-apk/MB-Player.apk
 
-      - name: Upload APK to Artifacts
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: MB-Player-APK
           path: release-apk/MB-Player.apk
 
-      - name: Publish Direct MB-Player.apk
+      - name: Direct APK Release (No Zip)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -551,5 +122,5 @@ jobs:
           git tag -d v1.0 || true
           gh release create v1.0 release-apk/MB-Player.apk \
             --title "MB Player Official APK" \
-            --notes "सीधा MB-Player.apk (बिना Zip फ़ाइल के)। डाउनलोड करें और सीधे इंस्टॉल करें।"
+            --notes "सीधा MB-Player.apk डाउनलोड करें।"
             
