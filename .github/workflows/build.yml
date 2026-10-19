@@ -1,4 +1,4 @@
-name: Build Sparsh Sahara APK
+name: Build MB Player APK
 
 on:
   workflow_dispatch:
@@ -26,362 +26,559 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
 
-      - name: Create App and Capacitor Project
+      - name: Create MB Player & Setup Capacitor
         run: |
           mkdir -p app-build/www
-          
-          # 1. सम्पूर्ण दृष्टिबाधित सहायक ऐप (index.html)
+
+          # 1. पूरा MB Player ऐप (HTML, CSS, JS, लोगो, जेस्चर) इसी में तैयार होगा
           cat << 'EOF' > app-build/www/index.html
           <!DOCTYPE html>
           <html lang="hi">
           <head>
             <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-            <title>स्पर्श सहारा</title>
-            <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+            <title>MB Player</title>
             <style>
               :root {
-                --bg: #000000;
-                --card: #141414;
-                --yellow: #ffeb3b;
-                --white: #ffffff;
-                --red: #ff3333;
-                --green: #00e676;
-                --blue: #29b6f6;
+                --bg-primary: #0a0c10;
+                --bg-secondary: #141721;
+                --accent-blue: #2563eb;
+                --accent-blue-light: #38bdf8;
+                --accent-glow: rgba(37, 99, 235, 0.45);
+                --text-main: #f9fafb;
+                --text-sub: #9ca3af;
+                --card-bg: rgba(20, 23, 33, 0.85);
+                --border: #222738;
               }
+
+              [data-theme="light"] {
+                --bg-primary: #f8fafc;
+                --bg-secondary: #ffffff;
+                --accent-blue: #1d4ed8;
+                --accent-blue-light: #0284c7;
+                --accent-glow: rgba(29, 78, 216, 0.2);
+                --text-main: #0f172a;
+                --text-sub: #475569;
+                --card-bg: rgba(255, 255, 255, 0.95);
+                --border: #e2e8f0;
+              }
+
               * {
-                box-sizing: border-box;
                 margin: 0;
                 padding: 0;
-                font-family: system-ui, -apple-system, sans-serif;
+                box-sizing: border-box;
+                user-select: none;
                 -webkit-tap-highlight-color: transparent;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
               }
+
               body {
-                background: var(--bg);
-                color: var(--white);
+                background-color: var(--bg-primary);
+                color: var(--text-main);
                 min-height: 100vh;
                 display: flex;
                 flex-direction: column;
-                padding: 14px;
+                overflow-x: hidden;
+                transition: background-color 0.3s ease;
               }
+
               header {
-                text-align: center;
-                padding: 12px 0;
-                border-bottom: 3px solid var(--yellow);
-                margin-bottom: 16px;
-              }
-              header h1 {
-                font-size: 26px;
-                color: var(--yellow);
-              }
-              header p {
-                font-size: 13px;
-                color: #bbb;
-                margin-top: 4px;
-              }
-              .screen {
-                display: none;
-                flex-direction: column;
-                gap: 14px;
-                flex: 1;
-              }
-              .screen.active {
+                background: var(--bg-secondary);
+                padding: 10px 16px;
                 display: flex;
+                justify-content: space-between;
+                align-items: center;
+                border-bottom: 1px solid var(--border);
+                position: sticky;
+                top: 0;
+                z-index: 100;
               }
-              .btn {
-                background: var(--card);
-                color: var(--yellow);
-                border: 3px solid var(--yellow);
+
+              .brand-container {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+              }
+
+              /* नीला तीर लोगो (Blue Play Arrow Logo) */
+              .app-logo {
+                width: 44px;
+                height: 44px;
                 border-radius: 12px;
-                padding: 18px 12px;
-                font-size: 19px;
-                font-weight: bold;
-                text-align: center;
+                background: linear-gradient(145deg, #1d4ed8 0%, #2563eb 45%, #0284c7 100%);
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                gap: 10px;
-                cursor: pointer;
-                text-decoration: none;
-                width: 100%;
-                min-height: 64px;
+                box-shadow: 0 4px 14px var(--accent-glow), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+                position: relative;
+                overflow: hidden;
               }
-              .btn:active, .btn:focus {
-                background: var(--yellow);
-                color: #000;
-                outline: 4px solid #fff;
+
+              .app-logo::after {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 40%;
+                background: linear-gradient(180deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0) 100%);
+                border-top-left-radius: 12px;
+                border-top-right-radius: 12px;
+                pointer-events: none;
               }
-              .btn-red { border-color: var(--red); color: var(--red); }
-              .btn-red:active, .btn-red:focus { background: var(--red); color: #fff; }
-              .btn-green { border-color: var(--green); color: var(--green); }
-              .btn-green:active, .btn-green:focus { background: var(--green); color: #000; }
-              .btn-blue { border-color: var(--blue); color: var(--blue); }
-              .btn-blue:active, .btn-blue:focus { background: var(--blue); color: #000; }
-              .back-btn {
-                background: #222;
-                color: #fff;
-                border: 2px solid #888;
-                padding: 15px;
-                font-size: 18px;
-                font-weight: bold;
-                border-radius: 10px;
-                margin-top: auto;
-                cursor: pointer;
+
+              .app-logo svg {
+                width: 22px;
+                height: 22px;
+                filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+                transform: translateX(1px);
               }
-              .card {
-                background: var(--card);
-                border: 2px solid #444;
-                border-radius: 10px;
-                padding: 16px;
-                font-size: 17px;
-                line-height: 1.6;
+
+              .brand-title h1 {
+                font-size: 1.2rem;
+                font-weight: 800;
+                letter-spacing: -0.3px;
+                background: linear-gradient(135deg, var(--text-main), var(--text-sub));
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
               }
-              .card h3 {
-                color: var(--yellow);
-                margin-bottom: 8px;
+
+              .brand-title span {
+                font-size: 0.72rem;
+                color: var(--accent-blue-light);
+                font-weight: 600;
+                display: block;
+                margin-top: -2px;
               }
-              .scanner-box {
-                border: 2px dashed var(--yellow);
-                background: #0a0a0a;
-                padding: 14px;
-                border-radius: 10px;
-                min-height: 130px;
-                max-height: 220px;
-                overflow-y: auto;
-                font-size: 18px;
+
+              .header-actions {
+                display: flex;
+                gap: 8px;
               }
-              #cameraFile { display: none; }
-              .grid-2 {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 10px;
-              }
-              .input-box {
-                width: 100%;
-                padding: 12px;
-                background: #222;
-                border: 2px solid var(--yellow);
-                color: #fff;
-                font-size: 16px;
+
+              .btn-action {
+                background: var(--card-bg);
+                border: 1px solid var(--border);
+                color: var(--text-main);
+                padding: 7px 11px;
                 border-radius: 8px;
-                margin-top: 6px;
+                cursor: pointer;
+                font-size: 0.82rem;
+                font-weight: 600;
+              }
+
+              .tabs-bar {
+                display: flex;
+                background: var(--bg-secondary);
+                border-bottom: 1px solid var(--border);
+                padding: 4px 16px;
+                gap: 16px;
+              }
+
+              .tab-item {
+                padding: 10px 14px;
+                background: none;
+                border: none;
+                color: var(--text-sub);
+                font-weight: 600;
+                font-size: 0.92rem;
+                cursor: pointer;
+                border-bottom: 3px solid transparent;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+              }
+
+              .tab-item.active {
+                color: var(--accent-blue-light);
+                border-bottom-color: var(--accent-blue);
+              }
+
+              main {
+                flex: 1;
+                padding: 16px;
+                display: flex;
+                flex-direction: column;
+                gap: 16px;
+                max-width: 900px;
+                margin: 0 auto;
+                width: 100%;
+              }
+
+              .player-card {
+                position: relative;
+                background: #000;
+                border-radius: 16px;
+                overflow: hidden;
+                box-shadow: 0 12px 35px rgba(0,0,0,0.5);
+                width: 100%;
+                aspect-ratio: 16 / 9;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+              }
+
+              video {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+                background: #000;
+              }
+
+              .gesture-hud {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(10, 12, 18, 0.85);
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.15);
+                padding: 14px 24px;
+                border-radius: 28px;
+                color: #fff;
+                font-size: 1.1rem;
+                font-weight: 700;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.2s ease;
+                z-index: 40;
+              }
+
+              .gesture-hud.show {
+                opacity: 1;
+              }
+
+              .gesture-track {
+                width: 80px;
+                height: 6px;
+                background: rgba(255, 255, 255, 0.25);
+                border-radius: 4px;
+                overflow: hidden;
+              }
+
+              .gesture-fill {
+                height: 100%;
+                background: var(--accent-blue-light);
+                width: 50%;
+              }
+
+              .touch-zones {
+                position: absolute;
+                inset: 0;
+                display: flex;
+                z-index: 20;
+              }
+
+              .zone {
+                flex: 1;
+                height: 100%;
+              }
+
+              .controls-panel {
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: linear-gradient(transparent, rgba(0, 0, 0, 0.92));
+                padding: 14px 16px;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                z-index: 30;
+                transition: opacity 0.3s;
+              }
+
+              .controls-panel.hidden {
+                opacity: 0;
+                pointer-events: none;
+              }
+
+              .seek-bar-container {
+                width: 100%;
+                height: 5px;
+                background: rgba(255, 255, 255, 0.3);
+                border-radius: 3px;
+                cursor: pointer;
+                position: relative;
+              }
+
+              .seek-filled {
+                height: 100%;
+                background: var(--accent-blue-light);
+                border-radius: 3px;
+                width: 0%;
+              }
+
+              .controls-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+              }
+
+              .btn-group {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+              }
+
+              .ctrl-icon-btn {
+                background: none;
+                border: none;
+                color: #fff;
+                font-size: 1.25rem;
+                cursor: pointer;
+                padding: 4px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+              }
+
+              .playback-time {
+                font-size: 0.8rem;
+                color: #cbd5e1;
+              }
+
+              .lock-pill {
+                position: absolute;
+                top: 14px;
+                left: 14px;
+                z-index: 35;
+                background: rgba(0, 0, 0, 0.65);
+                border: 1px solid rgba(255,255,255,0.2);
+                color: #fff;
+                padding: 6px 12px;
+                border-radius: 20px;
+                font-size: 0.8rem;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 5px;
+              }
+
+              .playlist-card {
+                background: var(--bg-secondary);
+                border-radius: 14px;
+                border: 1px solid var(--border);
+                padding: 16px;
+              }
+
+              .picker-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+              }
+
+              .btn-file-picker {
+                background: linear-gradient(135deg, var(--accent-blue), #0284c7);
+                color: #fff;
+                padding: 10px 20px;
+                border-radius: 10px;
+                font-weight: 600;
+                cursor: pointer;
+                font-size: 0.9rem;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                box-shadow: 0 4px 12px var(--accent-glow);
+              }
+
+              input[type="file"] {
+                display: none;
+              }
+
+              .file-status {
+                margin-top: 10px;
+                padding: 10px 14px;
+                border-radius: 8px;
+                background: var(--card-bg);
+                border: 1px solid var(--border);
+                font-size: 0.85rem;
+                color: var(--accent-blue-light);
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+              }
+
+              .developer-box {
+                background: var(--bg-secondary);
+                border: 1px solid var(--border);
+                border-radius: 14px;
+                padding: 14px 18px;
+                display: flex;
+                align-items: center;
+                gap: 14px;
+              }
+
+              .dev-badge {
+                width: 48px;
+                height: 48px;
+                border-radius: 50%;
+                background: linear-gradient(135deg, #10b981, #2563eb);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 700;
+                color: #fff;
+                font-size: 1.15rem;
+                border: 2px solid var(--accent-blue);
+                flex-shrink: 0;
+              }
+
+              .dev-details h3 {
+                font-size: 0.95rem;
+                font-weight: 700;
+              }
+
+              .dev-details p {
+                font-size: 0.8rem;
+                color: var(--text-sub);
+              }
+
+              .direct-tag {
+                font-size: 0.72rem;
+                color: #10b981;
+                font-weight: 600;
+                margin-top: 2px;
               }
             </style>
           </head>
           <body>
+            <!-- Navbar & Blue Play-Arrow Logo -->
             <header>
-              <h1 tabindex="0">स्पर्श सहारा</h1>
-              <p>स्पर्श राजकीय दृष्टिबाधित बालक इ. का., गोरखपुर</p>
+              <div class="brand-container">
+                <div class="app-logo">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M7 5.25C7 4.22 8.13 3.6 8.98 4.16L19.26 10.91C20.04 11.42 20.04 12.58 19.26 13.09L8.98 19.84C8.13 20.4 7 19.78 7 18.75V5.25Z" fill="#ffffff"/>
+                  </svg>
+                </div>
+                <div class="brand-title">
+                  <h1>MB Player</h1>
+                  <span id="txt-subtitle">Pro Offline Media</span>
+                </div>
+              </div>
+              <div class="header-actions">
+                <button class="btn-action" onclick="toggleLanguage()">हिन्दी / EN</button>
+                <button class="btn-action" id="theme-btn" onclick="toggleTheme()">🌙</button>
+              </div>
             </header>
 
-            <!-- 1. होम स्क्रीन -->
-            <main id="homeScreen" class="screen active" role="region" aria-label="मुख्य मेनू">
-              <button class="btn" onclick="nav('scannerScreen', 'स्मार्ट वाचक और स्कैनर स्क्रीन खुली')" aria-label="1. स्मार्ट वाचक और पुस्तक स्कैनर">
-                📖 1. स्मार्ट वाचक (बुक स्कैनर)
+            <!-- Video / Audio Tabs -->
+            <nav class="tabs-bar">
+              <button class="tab-item active" id="tab-v" onclick="switchMediaTab('video')">
+                <span>🎬</span> <span id="lbl-video">वीडियो</span>
               </button>
-              <button class="btn btn-red" onclick="nav('emergencyScreen', 'आपातकालीन हेल्पलाइन स्क्रीन खुली')" aria-label="2. आपातकालीन हेल्पलाइन डायलर">
-                🚨 2. आपातकालीन हेल्पलाइन
+              <button class="tab-item" id="tab-a" onclick="switchMediaTab('audio')">
+                <span>🎵</span> <span id="lbl-audio">ऑडियो</span>
               </button>
-              <button class="btn btn-blue" onclick="nav('lawsScreen', 'दिव्यांग सुरक्षा कानून स्क्रीन खुली')" aria-label="3. कानून एवं सुरक्षा धाराएं">
-                ⚖️ 3. कानून एवं सुरक्षा धाराएं
-              </button>
-              <button class="btn btn-green" onclick="nav('aboutScreen', 'डेवलपर मंजीत भारती प्रोफाइल स्क्रीन खुली')" aria-label="4. डेवलपर मंजीत भारती प्रोफाइल">
-                👤 4. मंजीत भारती (डेवलपर)
-              </button>
+            </nav>
+
+            <main>
+              <!-- Player Viewport -->
+              <div class="player-card" id="player-container">
+                <video id="media-player" playsinline></video>
+
+                <button class="lock-pill" id="lock-btn" onclick="toggleLock()">
+                  <span id="lock-icon">🔓</span> <span id="lbl-lock">अनलॉक</span>
+                </button>
+
+                <div class="gesture-hud" id="hud">
+                  <span id="hud-icon">🔊</span>
+                  <span id="hud-val">50%</span>
+                  <div class="gesture-track">
+                    <div class="gesture-fill" id="hud-fill"></div>
+                  </div>
+                </div>
+
+                <div class="touch-zones" id="touch-zones">
+                  <div class="zone" id="zone-bright"></div>
+                  <div class="zone" id="zone-vol"></div>
+                </div>
+
+                <div class="controls-panel" id="controls-panel">
+                  <div class="seek-bar-container" id="seek-container">
+                    <div class="seek-filled" id="seek-progress"></div>
+                  </div>
+                  <div class="controls-row">
+                    <div class="btn-group">
+                      <button class="ctrl-icon-btn" id="play-btn" onclick="togglePlayState()">▶</button>
+                      <span class="playback-time" id="time-txt">00:00 / 00:00</span>
+                    </div>
+                    <div class="btn-group">
+                      <button class="ctrl-icon-btn" id="speed-btn" onclick="cycleSpeed()" style="font-size: 0.85rem; font-weight: bold;">1.0x</button>
+                      <button class="ctrl-icon-btn" onclick="toggleFullscreen()">⛶</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Media Selector -->
+              <section class="playlist-card">
+                <div class="picker-row">
+                  <div>
+                    <h2 id="lbl-picker-heading" style="font-size: 1rem; font-weight: 700;">फ़ाइल खोलें</h2>
+                    <p id="lbl-picker-sub" style="font-size: 0.8rem; color: var(--text-sub);">कोई भी वीडियो या गाना चुनें</p>
+                  </div>
+                  <label class="btn-file-picker" for="file-upload">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                      <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span id="lbl-browse">चुनें</span>
+                  </label>
+                  <input type="file" id="file-upload" accept="video/*,audio/*" onchange="handleFileSelect(event)">
+                </div>
+                <div class="file-status">
+                  <span>▶</span> <span id="loaded-file-name">कोई फ़ाइल नहीं चुनी गई है</span>
+                </div>
+              </section>
+
+              <!-- Developer Information -->
+              <section class="developer-box">
+                <div class="dev-badge">MB</div>
+                <div class="dev-details">
+                  <h3>मनजीत भारती (Manjeet Bharti)</h3>
+                  <p id="lbl-dev-desc">डेवलपर • MB Player & स्पर्श साथी</p>
+                  <div class="direct-tag">✓ पूर्णतः विज्ञापन-मुक्त • 0% लॉगिन • ऑफलाइन सुरक्षित</div>
+                </div>
+              </section>
             </main>
 
-            <!-- 2. स्मार्ट वाचक स्क्रीन -->
-            <section id="scannerScreen" class="screen" role="region" aria-label="स्मार्ट वाचक स्क्रीन">
-              <div class="card">
-                <h3>📖 पुस्तक व टेक्स्ट वाचक</h3>
-                <p>कैमरा बटन दबाकर किसी भी किताब या कागज़ की फोटो लें। ऐप टेक्स्ट को तुरंत बोलकर सुनाएगा।</p>
-              </div>
-              <input type="file" id="cameraFile" accept="image/*" capture="environment" onchange="runOCR(event)">
-              <button class="btn" onclick="document.getElementById('cameraFile').click(); vibe();" aria-label="कैमरा खोलें और फोटो खींचें">
-                📷 कैमरा खोलें / फोटो खींचें
-              </button>
-              <div id="ocrStatus" style="color:#00e5ff; font-weight:bold; text-align:center;">कैमरा खोलने के लिए ऊपर क्लिक करें</div>
-              <div class="scanner-box" id="scannedText" tabindex="0">यहाँ पहचाना गया टेक्स्ट दिखाई देगा और बोला जाएगा।</div>
-              <div class="grid-2">
-                <button class="btn" onclick="speakCurrent()" aria-label="दोबारा सुनें">🔊 दोबारा सुनें</button>
-                <button class="btn btn-red" onclick="stopSpeech()" aria-label="आवाज़ रोकें">⏹️ रोकें</button>
-              </div>
-              <button class="back-btn" onclick="nav('homeScreen', 'मुख्य मेनू पर वापस आ गए')">⬅️ मुख्य मेनू पर जाएं</button>
-            </section>
-
-            <!-- 3. आपातकालीन हेल्पलाइन -->
-            <section id="emergencyScreen" class="screen" role="region" aria-label="आपातकालीन हेल्पलाइन स्क्रीन">
-              <button class="btn btn-red" onclick="dial('112', 'पुलिस एवं आपातकालीन सेवा 112')">📞 112 - राष्ट्रीय आपातकाल (Police)</button>
-              <button class="btn" onclick="dial('1076', 'मुख्यमंत्री हेल्पलाइन 1076')">📞 1076 - मुख्यमंत्री हेल्पलाइन (UP)</button>
-              <button class="btn" onclick="dial('1090', 'महिला सुरक्षा हेल्पलाइन 1090')">📞 1090 - विमेन पावर लाइन</button>
-              <button class="btn" onclick="dial('1098', 'चाइल्ड हेल्पलाइन 1098')">📞 1098 - चाइल्ड हेल्पलाइन</button>
-              <button class="btn btn-green" onclick="dial('18005990019', 'किरण दिव्यांग हेल्पलाइन')">📞 1800-599-0019 - किरण (दिव्यांग सहायता)</button>
-              <button class="btn btn-red" onclick="stopSpeech()">⏹️ आवाज़ रोकें</button>
-              <button class="back-btn" onclick="nav('homeScreen', 'मुख्य मेनू पर वापस आ गए')">⬅️ मुख्य मेनू पर जाएं</button>
-            </section>
-
-            <!-- 4. कानून व धाराएं -->
-            <section id="lawsScreen" class="screen" role="region" aria-label="कानून एवं सुरक्षा धाराएं">
-              <div class="card">
-                <h3>RPwD एक्ट 2016 - धारा 92 (उत्पीड़न पर कठोर सज़ा)</h3>
-                <p id="t92">यदि कोई व्यक्ति किसी दिव्यांगजन का सार्वजनिक अपमान करता है, डराता-धमकाता है, चोट पहुँचाता है या शोषण करता है, तो उसे 6 महीने से 5 वर्ष तक का कठोर कारावास और जुर्माना भुगतना होगा। यह गैर-जमानती अपराध है।</p>
-                <button class="btn" style="margin-top:10px;" onclick="speakSection('t92', 'धारा 92')">🔊 धारा 92 सुनें</button>
-              </div>
-              <div class="card">
-                <h3>RPwD एक्ट 2016 - धारा 3 (समानता का अधिकार)</h3>
-                <p id="t3">स्कूल, कॉलेज, नौकरी या सार्वजनिक स्थानों पर दिव्यांगजन के साथ भेदभाव गैरकानूनी है। प्रत्येक दृष्टिबाधित को सम्मान के साथ जीने का पूरा अधिकार है।</p>
-                <button class="btn" style="margin-top:10px;" onclick="speakSection('t3', 'धारा 3')">🔊 धारा 3 सुनें</button>
-              </div>
-              <div class="card">
-                <h3>RPwD एक्ट 2016 - धारा 89 (कानून उल्लंघन पर जुर्माना)</h3>
-                <p id="t89">दिव्यांगजन कानून के नियमों का उल्लंघन करने पर पहली बार 10,000 रुपये तक और दोबारा उल्लंघन पर 50,000 से लेकर 5,00,000 रुपये तक जुर्माना लगाने का सख्त प्रावधान है।</p>
-                <button class="btn" style="margin-top:10px;" onclick="speakSection('t89', 'धारा 89')">🔊 धारा 89 सुनें</button>
-              </div>
-              <button class="btn btn-red" onclick="stopSpeech()">⏹️ आवाज़ रोकें</button>
-              <button class="back-btn" onclick="nav('homeScreen', 'मुख्य मेनू पर वापस आ गए')">⬅️ मुख्य मेनू पर जाएं</button>
-            </section>
-
-            <!-- 5. डेवलपर प्रोफाइल स्क्रीन -->
-            <section id="aboutScreen" class="screen" role="region" aria-label="डेवलपर परिचय स्क्रीन">
-              <div class="card">
-                <h3>👨‍💻 डेवलपर एवं संस्थान परिचय</h3>
-                <p><strong>निर्माता:</strong> मंजीत भारती</p>
-                <p><strong>संस्थान:</strong> स्पर्श राजकीय दृष्टिबाधित बालक इंटर कॉलेज, गोरखपुर</p>
-                <div style="margin-top:12px;">
-                  <label for="devP"><strong>मोबाइल नंबर:</strong></label>
-                  <input type="tel" id="devP" class="input-box" placeholder="अपना मोबाइल नंबर डालें">
-                </div>
-                <div style="margin-top:10px;">
-                  <label for="devE"><strong>ईमेल आईडी:</strong></label>
-                  <input type="email" id="devE" class="input-box" placeholder="अपनी ईमेल आईडी डालें">
-                </div>
-                <button class="btn btn-green" style="margin-top:12px;" onclick="saveContact()">💾 विवरण सुरक्षित करें (Save)</button>
-              </div>
-              <button class="btn btn-blue" onclick="callDev()">📞 मंजीत भारती को कॉल करें</button>
-              <button class="btn" onclick="emailDev()">✉️ ईमेल भेजें</button>
-              <button class="back-btn" onclick="nav('homeScreen', 'मुख्य मेनू पर वापस आ गए')">⬅️ मुख्य मेनू पर जाएं</button>
-            </section>
-
             <script>
-              function vibe() { if (navigator.vibrate) navigator.vibrate(60); }
-              function speak(msg) {
-                if ('speechSynthesis' in window) {
-                  window.speechSynthesis.cancel();
-                  const u = new SpeechSynthesisUtterance(msg);
-                  u.lang = 'hi-IN';
-                  u.rate = 0.95;
-                  window.speechSynthesis.speak(u);
-                }
-              }
-              function stopSpeech() { vibe(); if ('speechSynthesis' in window) window.speechSynthesis.cancel(); }
-              function nav(id, msg) {
-                vibe(); stopSpeech();
-                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-                const el = document.getElementById(id);
-                if (el) { el.classList.add('active'); if (msg) setTimeout(() => speak(msg), 150); }
-              }
-              let lastText = "";
-              async function runOCR(e) {
-                vibe();
-                const f = e.target.files[0];
-                if (!f) return;
-                document.getElementById('ocrStatus').innerText = "अक्षर पढ़े जा रहे हैं...";
-                speak("फोटो मिल गई है। किताब का टेक्स्ट पढ़ा जा रहा है, कृपया प्रतीक्षा करें।");
-                try {
-                  const worker = await Tesseract.createWorker('hin+eng');
-                  const res = await worker.recognize(f);
-                  lastText = res.data.text.trim();
-                  await worker.terminate();
-                  if (lastText) {
-                    document.getElementById('scannedText').innerText = lastText;
-                    document.getElementById('ocrStatus').innerText = "सफलता पूर्वक पढ़ा गया!";
-                    speak("किताब में लिखा है: " + lastText);
-                  } else {
-                    document.getElementById('scannedText').innerText = "कोई साफ़ अक्षर नहीं मिले।";
-                    document.getElementById('ocrStatus').innerText = "टेक्स्ट नहीं मिला";
-                    speak("फोटो में कोई साफ़ अक्षर नहीं मिले। कृपया दोबारा फोटो लें।");
-                  }
-                } catch (err) {
-                  document.getElementById('ocrStatus').innerText = "स्कैन में समस्या आई।";
-                  speak("स्कैन करने में समस्या आई।");
-                }
-              }
-              function speakCurrent() { vibe(); if (lastText) speak(lastText); else speak("अभी कोई टेक्स्ट स्कैन नहीं है।"); }
-              function dial(num, name) { vibe(); speak(name + " पर कॉल मिलाई जा रही है।"); setTimeout(() => window.location.href = "tel:" + num, 1200); }
-              function speakSection(id, name) { vibe(); const el = document.getElementById(id); if (el) speak(name + ": " + el.innerText); }
-              function saveContact() {
-                vibe();
-                localStorage.setItem('m_p', document.getElementById('devP').value.trim());
-                localStorage.setItem('m_e', document.getElementById('devE').value.trim());
-                speak("विवरण सुरक्षित हो गया है।");
-                alert("विवरण सुरक्षित हो गया!");
-              }
-              function loadContact() {
-                document.getElementById('devP').value = localStorage.getItem('m_p') || "";
-                document.getElementById('devE').value = localStorage.getItem('m_e') || "";
-              }
-              function callDev() {
-                vibe();
-                const p = localStorage.getItem('m_p') || document.getElementById('devP').value;
-                if (p) { speak("मंजीत भारती जी को कॉल मिलाई जा रही है।"); setTimeout(() => window.location.href = "tel:" + p, 1000); }
-                else speak("कृपया पहले मोबाइल नंबर लिखकर सुरक्षित करें।");
-              }
-              function emailDev() {
-                vibe();
-                const e = localStorage.getItem('m_e') || document.getElementById('devE').value;
-                if (e) { speak("ईमेल भेजा जा रहा है।"); setTimeout(() => window.location.href = "mailto:" + e, 1000); }
-                else speak("कृपया पहले ईमेल आईडी सुरक्षित करें।");
-              }
-              window.addEventListener('load', () => {
-                loadContact();
-                speak("स्पर्श सहारा ऐप में आपका स्वागत है। स्पर्श कॉलेज गोरखपुर।");
-              });
-            </script>
-          </body>
-          </html>
-          EOF
+              let isHindi = true;
+              let isDarkMode = true;
+              let isLocked = false;
+              let currentSpeedIndex = 1;
+              const speedList = [0.5, 1.0, 1.25, 1.5, 2.0];
+              let currentBrightness = 100;
+              let touchStartX = 0;
+              let touchStartY = 0;
+              let lastTapTimestamp = 0;
+              let activeSide = null;
 
-          # 2. Capacitor Android इनिशियलाइज़ेशन
-          cd app-build
-          npm init -y
-          npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
-          
-          cat << 'EOF' > capacitor.config.json
-          {
-            "appId": "com.sparsh.sahara",
-            "appName": "स्पर्श सहारा",
-            "webDir": "www"
-          }
-          EOF
-          
-          npx cap add android
-          npx cap sync android
+              const media = document.getElementById('media-player');
+              const playBtn = document.getElementById('play-btn');
+              const seekProgress = document.getElementById('seek-progress');
+              const seekContainer = document.getElementById('seek-container');
+              const timeTxt = document.getElementById('time-txt');
+              const hud = document.getElementById('hud');
+              const hudIcon = document.getElementById('hud-icon');
+              const hudVal = document.getElementById('hud-val');
+              const hudFill = document.getElementById('hud-fill');
+              const playerContainer = document.getElementById('player-container');
+              const controlsPanel = document.getElementById('controls-panel');
+              const lockBtn = document.getElementById('lock-btn');
+              const lockIcon = document.getElementById('lock-icon');
+              const lblLock = document.getElementById('lbl-lock');
 
-          # 3. Android अनुमतियाँ (कैमरा, वाइब्रेशन, कॉल, इंटरनेट)
-          MANIFEST="android/app/src/main/AndroidManifest.xml"
-          sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-permission android:name="android.permission.VIBRATE" />\n    <uses-permission android:name="android.permission.CALL_PHONE" />' $MANIFEST
-
-      - name: Build Standalone Debug APK
-        run: |
-          cd app-build/android
-          chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
-
-      - name: Prepare APK File
-        run: |
-          cp app-build/android/app/build/outputs/apk/debug/app-debug.apk Sparsh-Sahara.apk
-
-      - name: Publish Direct APK to GitHub Releases
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "github-actions@github.com"
-          gh release delete v1.0.0 -y || true
-          git tag -d v1.0.0 2>/dev/null || true
-          git push origin :refs/tags/v1.0.0 2>/dev/null || true
-          
-          gh release create v1.0.0 Sparsh-Sahara.apk \
-            --title "स्पर्श सहारा v1.0.0 (APK)" \
-            --notes "मंजीत भारती, स्पर्श राजकीय दृष्टिबाधित बालक इंटर कॉलेज गोरखपुर द्वारा निर्मित दृष्टिबाधित सहायक ऐप।"
-            
+              const i18n = {
+                hi: {
+                  subtitle: "प्रो ऑफलाइन मीडिया",
+                  videoTab: "वीडियो",
+                  audioTab: "ऑडियो",
+                  unlocked:
